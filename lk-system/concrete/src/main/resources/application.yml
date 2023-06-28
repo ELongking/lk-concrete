@@ -1,0 +1,47 @@
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    username: root
+    password: 19980917
+    url: jdbc:mysql://localhost:3306/lk-concrete?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: 19980917
+    database: 0
+    lettuce:
+      pool:
+        max-idle: 16
+        max-active: 32
+        min-idle: 8
+
+server:
+  port: 9000
+  reactive:
+    session:
+      timeout: 30m
+
+mybatis:
+  mapper-locations: classpath:**/mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.longking.concrete.mapper.*: trace
+
+aliyun:
+  oss:
+    endpoint: oss-cn-chengdu.aliyuncs.com
+    accessKeyId: LTAI5tAw6ZsCiCm7PoK91SS2
+    accessKeySecret: ORgjwBUC4FoU3KZtGMlSoaSrVamR5s
+    bucketName: lkconcrete
+    maxSize: 5
+    policy:
+      expire: 300
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  page-size-zero: false

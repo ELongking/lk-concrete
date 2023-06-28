@@ -1,0 +1,25 @@
+{
+  "name": "lk-vue",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.3.2",
+    "axios": "^1.4.0",
+    "vue-router": "^4.2.2",
+    "font-awesome": "^4.7.0",
+    "echarts": "^5.4.2",
+    "vuex": "^4.1.0",
+    "element-plus": "^2.3.6",
+    "jquery": "^3.7.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.3.5"
+  }
+}

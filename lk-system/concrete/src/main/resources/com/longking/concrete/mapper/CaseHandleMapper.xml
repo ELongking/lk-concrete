@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.longking.concrete.mapper.CaseHandleMapper" >
+
+    <resultMap id="CaseResultMap" type="com.longking.concrete.model.StorageInfo" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="cid" property="cid" jdbcType="VARCHAR" />
+        <result column="uid" property="uid" jdbcType="VARCHAR" />
+        <result column="cname" property="cname" jdbcType="VARCHAR"/>
+        <result column="fileType" property="fileType" jdbcType="VARCHAR" />
+        <result column="tabularType" property="tabularType" jdbcType="VARCHAR" />
+        <result column="imageType" property="imageType" jdbcType="VARCHAR" />
+        <result column="createTime" property="createTime" jdbcType="BIGINT" />
+        <result column="lastModify" property="lastModify" jdbcType="BIGINT" />
+        <result column="isTrained" property="isTrained" jdbcType="INTEGER" />
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id ,cid, uid, cname, fileType, tabularType, imageType, createTime, lastModify, isTrained
+    </sql>
+
+    <select id="selectAllByPage" resultMap="CaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from storageinfo
+        <where>uid = #{uid}</where>
+    </select>
+
+    <insert id="insertByInfo">
+        <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into storageinfo
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="cid != null and cid != ''">
+                cid,
+            </if>
+            <if test="uid != null and uid != ''">
+                uid,
+            </if>
+            <if test="cname != null and cname != ''">
+                cname,
+            </if>
+            <if test="fileType != null and fileType != ''">
+                fileType,
+            </if>
+            <if test="tabularType != null and tabularType != ''">
+                tabularType,
+            </if>
+            <if test="imageType != null and imageType != ''">
+                imageType,
+            </if>
+            <if test="createTime != null and createTime != ''">
+                createTime,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="cid != null and cid != ''">
+                #{cid},
+            </if>
+            <if test="uid != null and uid != ''">
+                #{uid},
+            </if>
+            <if test="cname != null and cname != ''">
+                #{cname},
+            </if>
+            <if test="fileType != null and fileType != ''">
+                #{fileType},
+            </if>
+            <if test="tabularType != null and tabularType != ''">
+                #{tabularType},
+            </if>
+            <if test="imageType != null and imageType != ''">
+                #{imageType},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                #{createTime},
+            </if>
+        </trim>
+    </insert>
+
+    <delete id="deleteByCid">
+        delete from storageinfo
+        <where>cid = #{cid}</where>
+    </delete>
+
+
+</mapper>
