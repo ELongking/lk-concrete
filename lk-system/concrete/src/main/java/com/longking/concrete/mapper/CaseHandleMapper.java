@@ -12,4 +12,5 @@ public interface CaseHandleMapper {
     int insertByInfo(StorageInfo storageInfo);
 
     int deleteByCid(String cid);
+
 }

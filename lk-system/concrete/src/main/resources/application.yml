@@ -2,12 +2,12 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     username: root
-    password: 19980917
-    url: jdbc:mysql://localhost:3306/lk-concrete?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
+    password: xxx
+    url: xxx
   redis:
     host: 127.0.0.1
     port: 6379
-    password: 19980917
+    password: xxx
     database: 0
     lettuce:
       pool:
@@ -32,10 +32,10 @@ logging:
 
 aliyun:
   oss:
-    endpoint: oss-cn-chengdu.aliyuncs.com
-    accessKeyId: LTAI5tAw6ZsCiCm7PoK91SS2
-    accessKeySecret: ORgjwBUC4FoU3KZtGMlSoaSrVamR5s
-    bucketName: lkconcrete
+    endpoint: xxx
+    accessKeyId: xxx
+    accessKeySecret: xxx
+    bucketName: xxx
     maxSize: 5
     policy:
       expire: 300

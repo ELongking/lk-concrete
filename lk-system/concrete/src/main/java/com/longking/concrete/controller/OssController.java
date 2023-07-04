@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
 
 @RestController
 @RequestMapping("/oss")
@@ -19,8 +20,8 @@ public class OssController {
 
     @ApiOperation(value="上传文件")
     @RequestMapping(value = "/upload/{mode}", method = RequestMethod.POST)
-    public CommonResult<String> upload(@RequestParam("file")MultipartFile file,
-                                       @PathVariable(value = "mode")String mode) throws Exception {
+    public CommonResult<List<String>> upload(@RequestParam("file")MultipartFile file,
+                                             @PathVariable(value = "mode")String mode) throws Exception {
         if (file == null){
             return CommonResult.fail(null, "上传文件为空");
         } else {
@@ -37,9 +38,9 @@ public class OssController {
     }
 
     @ApiOperation("上传文件删除")
-    @RequestMapping(value="/delete/{mode}", method = RequestMethod.POST)
-    public CommonResult<String> delete(@RequestParam("filepath") String filepath,
-                                       @PathVariable("mode") String mode){
+    @RequestMapping(value="/delete", method = RequestMethod.POST)
+    public CommonResult<String> delete(@RequestParam("filePath") String filepath,
+                                       @RequestParam("mode") String mode){
         return ossUtils.delete(filepath, mode);
     }
 

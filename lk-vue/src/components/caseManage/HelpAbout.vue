@@ -128,6 +128,12 @@ export default {
     },
   },
   mounted() {
+    if (window.location.hash) {
+      const element = document.querySelector(window.location.hash)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
     this.$refs.scrollContainer.addEventListener("scroll", this.handleScroll, true)
   },
   beforeUnmount() {

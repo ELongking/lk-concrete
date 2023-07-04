@@ -3,6 +3,7 @@ import App from "./App.vue"
 import router from "./router"
 import ElementPlus from 'element-plus'
 import axios from "axios"
+
 import "element-plus/theme-chalk/index.css"
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';

@@ -17,8 +17,25 @@
         </template>
       </el-table-column>
 
-      <el-pagination background layout="prev, pager, next" :total="totalPage"/>
     </el-table>
+
+    <div class="pagination" style="margin-top: 50px">
+      <el-row>
+        <el-col :span="4"></el-col>
+        <el-col :span="4">
+          <el-button :disabled="nowPage === 1" @click="() => {pageShow(nowPage - 1); nowPage--}">&lt;</el-button>
+        </el-col>
+        <el-col :span="4">
+          <el-button :disabled="nowPage === sumPage" @click="() => {pageShow(nowPage + 1); nowPage++}">&gt;</el-button>
+        </el-col>
+        <el-col :span="6">
+          <el-select @change="pageDirect" placeholder="选择页码跳转">
+            <el-option v-for="idx in sumPage" :label="idx" :value="idx"/>
+          </el-select>
+        </el-col>
+        <el-col :span="4"></el-col>
+      </el-row>
+    </div>
 
     <MessageBox :boxVisible="boxVisible" :info="boxInfo" @closeMsgBox="closeMsgBox"></MessageBox>
 
@@ -36,7 +53,8 @@ export default {
   data() {
     return {
       allData: [],
-      totalPage: 1,
+      nowPage: 1,
+      sumPage: 0,
       boxVisible: false,
       boxInfo: {title: "", msg: "", re_direct: ""},
       fileToHans: {"tabular": "数据表格", "image": "图像", "tni": "表格+图像"},
@@ -45,14 +63,14 @@ export default {
     }
   },
   created() {
-    this.pageShow()
+    this.pageShow(this.nowPage)
   },
   methods: {
-    pageShow() {
-      axios.get("http://localhost:9000/cases/page/1-10").then(resp => {
+    pageShow(p) {
+      axios.get("http://localhost:9000/cases/page/" + p).then(resp => {
         let res = resp.data
         if (res.code === 1) {
-          this.totalPage = res.data.pages
+          this.sumPage = res.data.pages
           this.allData = res.data.list
           this.allData.forEach(item => {
             item.createTime = timeFormatConvert(item.createTime)
@@ -72,6 +90,10 @@ export default {
         }
       })
     },
+    pageDirect(val){
+      this.pageShow(val)
+      this.nowPage = val
+    },
     caseDetails() {
 
     },
@@ -81,7 +103,7 @@ export default {
         if (res.code === 1) {
           this.boxInfo.title = "删除成功"
           this.boxInfo.msg = "请点击返回"
-          this.boxInfo.re_direct = "/manage"
+          this.boxInfo.re_direct = "refresh"
           this.boxVisible = true
         } else {
           this.boxInfo.title = "删除失败"

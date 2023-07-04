@@ -44,7 +44,7 @@ export default {
   created() {
     this.handleSelect("/home/show")
   },
-  methods:{
+  methods: {
     handleSelect(key, keyPath) {
       this.$router.push(key)
     }
@@ -57,16 +57,25 @@ export default {
   background-color: #e9edf1;
   height: calc(100vh - 5rem);
 }
-.aside{
+
+.aside {
   height: calc(100vh - 5rem);
 }
+
 .aside > .menu {
   background-color: #313743;
   border-right: none;
 }
-.aside > .menu span{
+
+.aside > .menu span {
   color: white;
 }
 
+</style>
 
+
+<style>
+body {
+  overflow-x: auto;
+}
 </style>

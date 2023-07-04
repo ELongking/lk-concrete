@@ -16,3 +16,9 @@ export default {
 <style scoped>
 
 </style>
+
+<style>
+body {
+  overflow-x: auto;
+}
+</style>

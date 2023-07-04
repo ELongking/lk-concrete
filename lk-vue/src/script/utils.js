@@ -1,5 +1,5 @@
-function _add_zero(oriTime){
-    return oriTime = oriTime.length === 2 ? oriTime: "0" + oriTime
+function _add_zero(oriTime) {
+    return oriTime = oriTime.length === 2 ? oriTime : "0" + oriTime
 }
 
 
@@ -23,6 +23,30 @@ function timeFormatConvert(timeInt) {
 }
 
 
+function elTransferConvert(jsonObj) {
+    jsonObj.forEach(item => {
+        let ansCols = item.cols
+        let newCols = []
+        ansCols.forEach(col => {
+            newCols.push(col.label)
+        })
+        item.cols = newCols
+    })
+
+    jsonObj.forEach(item => {
+        let newLeft = []
+        item.cols.forEach(col => {
+            if (!item.rightData.includes(col)){
+                newLeft.push(col)
+            }
+        })
+        item.leftData = newLeft
+    })
+    return jsonObj
+}
+
+
 export {
-    timeFormatConvert
+    timeFormatConvert,
+    elTransferConvert
 }

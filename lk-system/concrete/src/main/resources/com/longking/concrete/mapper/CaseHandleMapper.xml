@@ -1,27 +1,33 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.longking.concrete.mapper.CaseHandleMapper" >
+<mapper namespace="com.longking.concrete.mapper.CaseHandleMapper">
 
-    <resultMap id="CaseResultMap" type="com.longking.concrete.model.StorageInfo" >
-        <id column="id" property="id" jdbcType="INTEGER" />
-        <result column="cid" property="cid" jdbcType="VARCHAR" />
-        <result column="uid" property="uid" jdbcType="VARCHAR" />
+    <resultMap id="CaseResultMap" type="com.longking.concrete.model.StorageInfo">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="cid" property="cid" jdbcType="VARCHAR"/>
+        <result column="uid" property="uid" jdbcType="VARCHAR"/>
         <result column="cname" property="cname" jdbcType="VARCHAR"/>
-        <result column="fileType" property="fileType" jdbcType="VARCHAR" />
-        <result column="tabularType" property="tabularType" jdbcType="VARCHAR" />
-        <result column="imageType" property="imageType" jdbcType="VARCHAR" />
-        <result column="createTime" property="createTime" jdbcType="BIGINT" />
-        <result column="lastModify" property="lastModify" jdbcType="BIGINT" />
-        <result column="isTrained" property="isTrained" jdbcType="INTEGER" />
+        <result column="fileType" property="fileType" jdbcType="VARCHAR"/>
+        <result column="tabularType" property="tabularType" jdbcType="VARCHAR"/>
+        <result column="imageType" property="imageType" jdbcType="VARCHAR"/>
+        <result column="createTime" property="createTime" jdbcType="BIGINT"/>
+        <result column="lastModify" property="lastModify" jdbcType="BIGINT"/>
+        <result column="isTrained" property="isTrained" jdbcType="INTEGER"/>
     </resultMap>
 
-    <sql id="Base_Column_List" >
-        id ,cid, uid, cname, fileType, tabularType, imageType, createTime, lastModify, isTrained
+    <sql id="Case_Base_Column_List">
+        id
+        , cid, uid, cname, fileType, tabularType, imageType, createTime, lastModify, isTrained
+    </sql>
+
+    <sql id="Logic_Base_Column_List">
+        id
+        , cid, fileName, fileType, isOutput, leftData, rightData ,cols
     </sql>
 
     <select id="selectAllByPage" resultMap="CaseResultMap">
         select
-        <include refid="Base_Column_List"></include>
+        <include refid="Case_Base_Column_List"></include>
         from storageinfo
         <where>uid = #{uid}</where>
     </select>
@@ -53,6 +59,9 @@
             <if test="createTime != null and createTime != ''">
                 createTime,
             </if>
+            <if test="lastModify != null and lastModify != ''">
+                lastModify,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="cid != null and cid != ''">
@@ -76,6 +85,9 @@
             <if test="createTime != null and createTime != ''">
                 #{createTime},
             </if>
+            <if test="lastModify != null and lastModify != ''">
+                #{lastModify},
+            </if>
         </trim>
     </insert>
 
@@ -83,6 +95,7 @@
         delete from storageinfo
         <where>cid = #{cid}</where>
     </delete>
+
 
 
 </mapper>

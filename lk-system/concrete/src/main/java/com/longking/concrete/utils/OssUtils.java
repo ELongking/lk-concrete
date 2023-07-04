@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -22,7 +23,7 @@ public class OssUtils {
     private StringRedisTemplate stringRedisTemplate;
 
 
-    public CommonResult<String> upload(File file, String mode, String absPath) {
+    public CommonResult<List<String>> upload(File file, String mode, String absPath) {
         String endPoint = ossConfig.getEndPoint();
         String keyId = ossConfig.getAccessKeyId();
         String keySecret = ossConfig.getAccessKeySecret();
@@ -30,6 +31,12 @@ public class OssUtils {
 
         String uid = stringRedisTemplate.opsForValue().get("uid");
         String cid = stringRedisTemplate.opsForValue().get("cid");
+
+        List<String> cols = null;
+        if (mode.equals("tabular")){
+            cols = FileReader.excelReader(absPath);
+            cols.add(absPath);
+        }
 
         OSSClient client = new OSSClient(endPoint, keyId, keySecret);
         String fileUrl = uid + "/" + cid + "/" + mode + "/" + file.getName();
@@ -39,7 +46,30 @@ public class OssUtils {
             client.shutdown();
         }
         if (res != null) {
-            return CommonResult.success(absPath, "success");
+            return CommonResult.success(cols, "success");
+        } else {
+            return CommonResult.fail(null, "上传失败");
+        }
+    }
+
+    public CommonResult<String> uploadJson(String jsonStr){
+        String endPoint = ossConfig.getEndPoint();
+        String keyId = ossConfig.getAccessKeyId();
+        String keySecret = ossConfig.getAccessKeySecret();
+        String bucketName = ossConfig.getBucketName();
+
+        String uid = stringRedisTemplate.opsForValue().get("uid");
+        String cid = stringRedisTemplate.opsForValue().get("cid");
+        OSSClient client = new OSSClient(endPoint, keyId, keySecret);
+        byte[] content = jsonStr.getBytes();
+        String fileUrl = uid + "/" + cid + "/" + "config.json";
+        PutObjectResult res = client.putObject(new PutObjectRequest(bucketName, fileUrl, new ByteArrayInputStream(content)));
+        client.setBucketAcl(bucketName, CannedAccessControlList.Private);
+        if (client != null) {
+            client.shutdown();
+        }
+        if (res != null) {
+            return CommonResult.success(null, "success");
         } else {
             return CommonResult.fail(null, "上传失败");
         }
@@ -97,5 +127,6 @@ public class OssUtils {
             client.shutdown();
         }
     }
+
 
 }

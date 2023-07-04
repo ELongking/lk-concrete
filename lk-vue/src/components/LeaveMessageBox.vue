@@ -3,16 +3,17 @@
       title="Tips"
       width="30%"
       v-model="isVisible"
-      @close="closeBox"
       :modal="false"
       :append-to-body="true"
       class="box"
+      :show-close="false"
   >
 
     <span>{{ info.msg }}</span>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="toOther">确定</el-button>
+        <el-button @click="toNext">确定</el-button>
+        <el-button @click="toNow">留在原地</el-button>
       </span>
     </template>
 
@@ -20,10 +21,9 @@
 </template>
 
 <script>
-import router from "@/router";
 
 export default {
-  name: "MessageBox",
+  name: "LeaveMessageBox",
   data() {
     return {
       isVisible: false
@@ -34,23 +34,15 @@ export default {
     info: {
       title: {type: String, default: ""},
       msg: {type: String, default: ""},
-      re_direct: {type: String, default: "", required: false}
     }
   },
   methods: {
-    toOther() {
-      if (this.info.re_direct === "refresh"){
-        window.location.reload()
-      }
-      else if (this.info.re_direct !== "") {
-        router.push(this.info.re_direct)
-      } else {
-        this.closeBox()
-      }
+    toNext(){
+      this.$emit("toNext")
     },
-    closeBox() {
-      this.$emit("closeMsgBox")
-    }
+    toNow(){
+      this.$emit("toNow")
+    },
   },
   watch: {
     boxVisible(newVal, oldVal) {

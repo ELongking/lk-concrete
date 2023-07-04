@@ -81,3 +81,9 @@ export default {
   display: none;
 }
 </style>
+
+<style>
+body {
+  overflow-x: scroll;
+}
+</style>
