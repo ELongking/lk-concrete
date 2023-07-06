@@ -14,6 +14,9 @@ spring:
         max-idle: 16
         max-active: 32
         min-idle: 8
+  servlet:
+    multipart:
+      max-file-size: 1000MB
 
 server:
   port: 9000

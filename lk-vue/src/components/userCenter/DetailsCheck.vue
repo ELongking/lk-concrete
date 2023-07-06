@@ -4,7 +4,15 @@
 
 <script>
 export default {
-  name: "DetailsCheck"
+  name: "DetailsCheck",
+  data() {
+    return {
+
+    }
+  },
+  methods:{
+
+  }
 }
 </script>
 

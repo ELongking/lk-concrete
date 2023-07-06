@@ -84,7 +84,8 @@ export default {
       techDataLang: [
         {name: "Java", role: "Web后端逻辑/中间件"},
         {name: "Python", role: "软件前后端/ML&DL训练推理"},
-        {name: "JavaScript", role: "Web前端"}
+        {name: "JavaScript", role: "Web前端"},
+        {name: "GPT-3.5", role: "小助手"}
       ],
       techDataJava: [
         {name: "SpringBoot", role: "容器/MVC"},

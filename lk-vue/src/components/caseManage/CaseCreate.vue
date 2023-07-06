@@ -72,7 +72,7 @@
           <el-upload
               v-if="createForm.fileType !== 'image'"
               action="http://localhost:9000/oss/upload/tabular"
-              accept=".xlsx,.xls,.xls"
+              accept=".xlsx"
               name="file"
               :on-success="uploadSuccess"
               :on-error="uploadFailed"
@@ -89,7 +89,7 @@
           <el-upload
               v-if="createForm.fileType !== 'tabular'"
               action="http://localhost:9000/oss/upload/image"
-              accept=".zip,.rar,.7z"
+              accept=".zip"
               name="file"
               :on-success="uploadSuccess"
               :on-error="uploadFailed"
@@ -131,7 +131,6 @@
                         v-model="item.rightData"
                         :left-defaults="item.leftData"
                         :right-defaults="item.rightData"
-                        @change="checkChange"
                         :button-texts="['选择为x', '选择为y']"
                     />
                   </el-col>
@@ -229,7 +228,7 @@ export default {
         next(false);
         this.leaveBoxVisible = false;
       }
-    } else if (!this.processOne) {
+    } else if (!this.processOne || this.processThree) {
       next()
     }
   },

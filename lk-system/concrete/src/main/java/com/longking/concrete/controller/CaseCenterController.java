@@ -5,20 +5,26 @@ import cn.hutool.log.Log;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.aliyun.oss.model.OSSObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.longking.concrete.analysis.TabularAna;
 import com.longking.concrete.common.CommonResult;
+import com.longking.concrete.dto.OssObjectDto;
 import com.longking.concrete.model.LogicInfo;
 import com.longking.concrete.model.StorageInfo;
 import com.longking.concrete.service.CaseHandleService;
 import com.longking.concrete.utils.GenerateMarker;
 import com.longking.concrete.utils.OssUtils;
 import io.swagger.annotations.ApiOperation;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.UnsupportedEncodingException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,6 +47,47 @@ public class CaseCenterController {
         PageHelper.startPage(pageNum, 15);
         PageInfo<StorageInfo> page = PageInfo.of(caseHandleService.selectAll(uid));
         return CommonResult.success(page, "success");
+    }
+
+    @ApiOperation(value = "展示详细信息")
+    @RequestMapping(value = "/detail/{cid}", method = RequestMethod.GET)
+    public CommonResult<List<Object>> detailShow(@PathVariable(value = "cid") String cid) throws Exception {
+        String uid = stringRedisTemplate.opsForValue().get("uid");
+        OssObjectDto ossObjectDto = ossUtils.getFileObject(uid, cid, "config.json");
+        OSSObject ossObject = ossObjectDto.getOssObject();
+        InputStream inputStream = ossObject.getObjectContent();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, len);
+        }
+        String jsonStr = outputStream.toString("UTF-8");
+
+        ossObject.close();
+        inputStream.close();
+        outputStream.close();
+        ossObjectDto.getOssClient().shutdown();
+
+        List<Map<String, Object>> jsonList = JSON.parseObject(jsonStr, List.class);
+
+        List<Object> res = new ArrayList<>();
+        for (Map<String, Object> map : jsonList) {
+            String type = (String) map.get("fileType");
+            if (type.equals("tabular")) {
+                String ansName = (String) map.get("fileName");
+                ansName = "tabular" + "/" + ansName.substring(ansName.lastIndexOf("\\") + 1);
+                OssObjectDto ansOssObjectDto = ossUtils.getFileObject(uid, cid, ansName);
+                OSSObject ansObject = ansOssObjectDto.getOssObject();
+                Object anaRes = TabularAna.generateTabularDetails(map, ansObject);
+                res.add(anaRes);
+
+                ansObject.close();
+                ansOssObjectDto.getOssClient().shutdown();
+            }
+        }
+        return CommonResult.success(res, "success");
+
     }
 
     @ApiOperation(value = "删除某一个批次")
@@ -94,8 +141,10 @@ public class CaseCenterController {
         if (ObjectUtil.isEmpty(logicInfos)) {
             return CommonResult.fail(null, "上传失败, 不存在需上传的逻辑数据");
         } else {
+            String uid = stringRedisTemplate.opsForValue().get("uid");
+            String cid = stringRedisTemplate.opsForValue().get("cid");
             String jsonStr = JSON.toJSONString(logicInfos);
-            return ossUtils.uploadJson(jsonStr);
+            return ossUtils.uploadJson(jsonStr, uid, cid);
         }
     }
 

@@ -11,6 +11,7 @@ import Manage from "@/views/Manage.vue";
 import Train from "@/views/Train.vue";
 import Infer from "@/views/Infer.vue";
 import CaseShow from "@/components/caseManage/CaseShow.vue";
+import DetailCard from "@/components/caseManage/DetailCard.vue"
 import CaseCreate from "@/components/caseManage/CaseCreate.vue";
 import HelpAbout from "@/components/caseManage/HelpAbout.vue";
 

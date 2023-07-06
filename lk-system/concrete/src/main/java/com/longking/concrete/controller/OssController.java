@@ -4,6 +4,7 @@ import com.longking.concrete.common.CommonResult;
 import com.longking.concrete.utils.OssUtils;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +18,8 @@ public class OssController {
 
     @Autowired
     private OssUtils ossUtils;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @ApiOperation(value="上传文件")
     @RequestMapping(value = "/upload/{mode}", method = RequestMethod.POST)
@@ -33,7 +36,10 @@ public class OssController {
             fos.write(file.getBytes());
             fos.close();
             file.transferTo(newFile);
-            return ossUtils.upload(newFile, mode, newFile.getAbsolutePath());
+
+            String uid = stringRedisTemplate.opsForValue().get("uid");
+            String cid = stringRedisTemplate.opsForValue().get("cid");
+            return ossUtils.upload(newFile, mode, newFile.getAbsolutePath(), uid, cid);
         }
     }
 
@@ -41,7 +47,10 @@ public class OssController {
     @RequestMapping(value="/delete", method = RequestMethod.POST)
     public CommonResult<String> delete(@RequestParam("filePath") String filepath,
                                        @RequestParam("mode") String mode){
-        return ossUtils.delete(filepath, mode);
+
+        String uid = stringRedisTemplate.opsForValue().get("uid");
+        String cid = stringRedisTemplate.opsForValue().get("cid");
+        return ossUtils.delete(filepath, mode, uid, cid);
     }
 
 
