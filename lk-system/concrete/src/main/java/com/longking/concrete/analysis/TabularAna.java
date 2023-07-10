@@ -30,7 +30,7 @@ public class TabularAna {
                     row.set(i, ans);
                 } catch (Exception e) {
                     String ans = String.valueOf(row.get(i));
-                    Double kl;
+                    double kl;
                     if (ans.equals("")) {
                         kl = 0.0;
                     } else {
@@ -95,6 +95,7 @@ public class TabularAna {
         String fileName = (String) jsonMap.get("fileName");
         TabularDetails tabularDetails = new TabularDetails();
         fileName = fileName.substring(fileName.lastIndexOf("\\") + 1);
+        long fileSize = ossObject.getObjectMetadata().getContentLength();
 
         List<List<Double>> matrix = generateExcelData(ossObject);
         List<List<Double>> ms = generateMeanAndStd(matrix);
@@ -126,6 +127,8 @@ public class TabularAna {
         tabularDetails.setFileName(fileName);
         tabularDetails.setMean(mean);
         tabularDetails.setStd(std);
+
+        tabularDetails.setFileSize(fileSize);
         return tabularDetails;
     }
 

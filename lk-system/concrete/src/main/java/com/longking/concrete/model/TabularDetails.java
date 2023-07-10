@@ -17,6 +17,7 @@ public class TabularDetails {
     private List<String> xCols;
     private List<String> yCols;
     private String fileName;
+    private Long fileSize;
     private List<Double> mean;
     private List<Double> std;
     private List<List<Double>> allData;

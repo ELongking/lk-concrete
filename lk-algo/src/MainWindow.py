@@ -37,7 +37,6 @@ class MainWindow(QMainWindow):
         h_layout_1 = QHBoxLayout()
         h_layout_2 = QHBoxLayout()
         h_layout_3 = QHBoxLayout()
-        h_layout_4 = QHBoxLayout()
 
         username_label = QLabel("用户名: ")
         self.username_text = QLineEdit("longking")

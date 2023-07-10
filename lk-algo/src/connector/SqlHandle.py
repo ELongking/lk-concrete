@@ -4,7 +4,7 @@ import pymysql
 
 class SqlHandle:
     def __init__(self):
-        self.pool = PooledDB(pymysql, 5, host='localhost', user='root', passwd='xxx', db='xxx', port=3306)
+        self.pool = PooledDB(pymysql, 5, host='localhost', user='root', passwd='19980917', db='lk-concrete', port=3306)
         self.conn = self.pool.connection()
         self.cur = self.conn.cursor()
         self.config = {"username": "", "uid": "", "cid": ""}
@@ -14,11 +14,8 @@ class SqlHandle:
         self.cur.execute(sql, (username, password))
         res = self.cur.fetchall()
         if len(res) == 1:
-            sql = "SELECT `uid` from `userinfo` WHERE `username` = %s"
-            self.cur.execute(sql, username)
-            res = self.cur.fetchall()
             self.config["username"] = username
-            self.config["uid"] = res[0]
+            self.config["uid"] = res[0][1]
             return True
         else:
             return False

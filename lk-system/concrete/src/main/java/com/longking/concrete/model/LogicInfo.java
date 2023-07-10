@@ -14,6 +14,7 @@ public class LogicInfo {
     private String fileName;
     private String fileType;
     private boolean isOutput;
+    private boolean isTrained;
     private ArrayList<String> leftData;
     private ArrayList<String> rightData;
     private ArrayList<String> cols;

@@ -45,8 +45,23 @@ function elTransferConvert(jsonObj) {
     return jsonObj
 }
 
+function sizeFormat(s){
+    let allUnit = ["bytes", "Kb", "Mb", "Gb"]
+    let index = 0
+    let unit = allUnit[index]
+
+    while (true){
+        if (s < 1024 || index === 4){break}
+        s = s / 1024
+        index ++
+        unit = allUnit[index]
+    }
+    s = s.toFixed(4)
+    return s + " " + unit
+}
 
 export {
     timeFormatConvert,
-    elTransferConvert
+    elTransferConvert,
+    sizeFormat
 }

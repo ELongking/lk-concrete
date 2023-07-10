@@ -6,10 +6,18 @@ public class MathUtils {
 
     public static double formatNumber(Double number){
         DecimalFormat decimalFormat = new DecimalFormat("#.####");
-        decimalFormat.setGroupingUsed(false); // 禁用千分位分组
+        decimalFormat.setGroupingUsed(false);
 
         String formattedNumber = decimalFormat.format(number);
         return Double.parseDouble(formattedNumber);
+    }
+
+    public static long formatNumber(long number){
+        DecimalFormat decimalFormat = new DecimalFormat("#.####");
+        decimalFormat.setGroupingUsed(false);
+
+        String formattedNumber = decimalFormat.format(number);
+        return Long.parseLong(formattedNumber);
     }
 
 }

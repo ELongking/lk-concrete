@@ -9,7 +9,7 @@
         <el-table-column prop="fileType" label="文件类型" minWidth="15%"/>
         <el-table-column prop="taskType" label="任务类型" minWidth="15%"/>
         <el-table-column prop="createTime" label="创建时间" minWidth="15%"/>
-        <el-table-column prop="lastModify" label="最后修改时间" minWidth="15%"/>
+        <el-table-column prop="lastModify" label="上次查看时间" minWidth="15%"/>
         <el-table-column prop="isTrained" label="是否训练" minWidth="15%"/>
         <el-table-column fixed="right" label="操作" minWidth="15%">
           <template #default="scope">
@@ -44,6 +44,7 @@
     <DetailCard
         v-if="isDetails"
         @toDetailVisible="toDetailVisible"
+        :baseInfo="baseInfo"
         :jsonInfo="jsonInfo"
     />
 
@@ -54,7 +55,7 @@
 
 <script>
 import axios from "axios";
-import {timeFormatConvert} from "@/script/utils";
+import {timeFormatConvert, sizeFormat} from "@/script/utils";
 import MessageBox from "@/components/MessageBox.vue";
 import DetailCard from "@/components/caseManage/DetailCard.vue";
 
@@ -71,6 +72,7 @@ export default {
       fileToHans: {"tabular": "数据表格", "image": "图像", "tni": "表格+图像"},
       taskToHans: {"cls": "分类", "reg": "回归", "det": "检测", "seg": "分割"},
       boolToHans: {1: "是", 0: "否"},
+      baseInfo: {},
       jsonInfo: [],
       isDetails: false
     }
@@ -111,9 +113,24 @@ export default {
       axios.get("http://localhost:9000/cases/detail/" + row.cid).then(resp => {
         let res = resp.data
         if (res.code === 1) {
+          this.baseInfo = row
+          this.baseInfo["fileNum"] = res.data.length
+
+          let tabularSize = 0
+          let imageSize = 0
+          res.data.forEach(item => {
+            if (item.fileType === "tabular"){
+              tabularSize += item.fileSize
+            } else {
+              imageSize += item.fileSize
+            }
+          })
+
+          this.baseInfo["tabularSize"] = sizeFormat(tabularSize)
+          this.baseInfo["imageSize"] = sizeFormat(imageSize)
+
           this.jsonInfo = res.data
           this.isDetails = true
-          console.log(this.isDetails)
         } else {
           this.boxInfo.title = "出错"
           this.boxInfo.msg = "查看详情失败, 请稍后重试"
@@ -140,8 +157,18 @@ export default {
       this.boxVisible = false
     },
     toDetailVisible() {
-      this.isDetails = false
-      this.jsonInfo = []
+      axios.post("http://localhost:9000/cases/details/update/" + this.baseInfo.cid).then(resp=>{
+        let res = resp.data
+        if (res.code === 1){
+          this.isDetails = false
+          this.baseInfo = {}
+          this.jsonInfo = []
+        } else {
+          this.boxInfo.title = "发生小错误"
+          this.boxInfo.msg = res.msg
+          this.boxVisible = true
+        }
+      })
     }
   }
 }

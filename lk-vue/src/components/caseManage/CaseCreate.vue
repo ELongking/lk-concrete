@@ -295,7 +295,8 @@ export default {
             fileType: "tabular",
             isOutput: false,
             leftData: [],
-            rightData: []
+            rightData: [],
+            isTrained: false
           }
           this.configForm.push(item)
           this.processTwo = true
@@ -307,7 +308,8 @@ export default {
             isOutput: false,
             leftData: [],
             rightData: [],
-            cols: []
+            cols: [],
+            isTrained: false
           }
           this.configForm.push(item)
           this.processTwo = true

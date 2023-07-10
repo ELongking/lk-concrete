@@ -97,5 +97,21 @@
     </delete>
 
 
+    <update id="updateByLastModify">
+        <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        update storageinfo
+        <set>
+            <if test="lastModify != null">
+                lastModify = #{lastModify},
+            </if>
+        </set>
+        <where>
+            cid = #{cid}
+        </where>
+    </update>
+
+
 
 </mapper>

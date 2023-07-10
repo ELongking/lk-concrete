@@ -25,4 +25,7 @@ public class CaseHandleServiceImpl implements CaseHandleService {
 
     @Override
     public int deleteCase(String cid) {return caseHandleMapper.deleteByCid(cid);}
+
+    @Override
+    public int updateLastModify(String cid, long lastModify) {return caseHandleMapper.updateByLastModify(cid, lastModify);}
 }

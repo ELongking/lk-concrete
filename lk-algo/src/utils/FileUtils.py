@@ -1,13 +1,23 @@
+import json
 import os
 import os.path as osp
 
 
-def check_case_directory(dirname):
-    exist_json, exist_dir = False, False
+def check_case_directory(dirname) -> str:
+    tree = os.listdir(dirname)
 
-    for file in os.listdir(dirname):
-        if file.endswith("json"):
-            exist_json = True
-        if osp.isdir(file) and file in ["tabular", "image"]:
-            exist_dir = True
-    return exist_dir and exist_json
+    if tree != ["config.json", "image", "tabular"]:
+        return "文件目录结构错误, 缺少必要文件或文件夹"
+    if not osp.isdir(osp.join(dirname, "tabular")):
+        return "Tabular 不是文件夹"
+    if not osp.isdir(osp.join(dirname, "image")):
+        return "Image 不是文件夹"
+
+    return "success"
+
+
+def import_json_info(dirpath: str) -> list:
+    filepath = dirpath + r"/config.json"
+    print(filepath)
+    f = open(filepath, "r+", encoding='utf-8')
+    return json.load(f)

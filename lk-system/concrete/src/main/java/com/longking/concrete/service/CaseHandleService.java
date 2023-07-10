@@ -12,4 +12,5 @@ public interface CaseHandleService {
     int addCase(StorageInfo storageInfo);
 
     int deleteCase(String cid);
+    int updateLastModify(String cid, long lastModify);
 }

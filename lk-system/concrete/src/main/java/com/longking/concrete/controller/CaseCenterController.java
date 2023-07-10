@@ -87,8 +87,20 @@ public class CaseCenterController {
             }
         }
         return CommonResult.success(res, "success");
-
     }
+
+    @ApiOperation(value = "更新详细信息的上一次查看时间")
+    @RequestMapping(value = "/details/update/{cid}", method = RequestMethod.POST)
+    public CommonResult<String> detailTimeUpdate(@PathVariable(value = "cid") String cid) {
+        long lastModify = new Date().getTime();
+        int flag = caseHandleService.updateLastModify(cid, lastModify);
+        if (flag == 1) {
+            return CommonResult.success(null, "success");
+        } else {
+            return CommonResult.fail(null, "退出失败, 请稍后重试");
+        }
+    }
+
 
     @ApiOperation(value = "删除某一个批次")
     @RequestMapping(value = "/delete/{cid}", method = RequestMethod.POST)
