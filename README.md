@@ -1,2 +1,4 @@
 # lk-concrete
-for graduate
+For graduate
+
+WHUT Civil Engineering Graduate Thesis -> Full Stack System by ELongking
