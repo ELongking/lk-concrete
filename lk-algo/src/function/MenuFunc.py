@@ -22,7 +22,9 @@ def directory_import(parent: ProcessWindow):
     if folder_path:
         flag = check_case_directory(folder_path)
         if flag == "success":
-            parent.cname_label.setText(f" 批次 -> {folder_path.split('/')[-1]} ")
+            now_cname = folder_path.split('/')[-1]
+            parent.cname_label.setText(f" 批次 -> {now_cname} ")
+            parent.now_cname = now_cname
             parent.config = import_json_info(folder_path)
             parent.is_import.value = True
         else:

@@ -72,6 +72,7 @@ class AsideTreeView(QTreeView):
         self.tmodel.appendRow(self.tabular_item)
         self.tmodel.appendRow(self.image_item)
 
+        self.item_num = [0, 0]
         self._init_tree()
 
     def _init_tree(self) -> None:
@@ -81,10 +82,8 @@ class AsideTreeView(QTreeView):
             if item["fileType"] == "tabular":
                 ans_item = TabularItem(ans_name)
                 self.tabular_item.appendRow(ans_item)
+                self.item_num[0] += 1
             else:
                 ans_item = ImageItem(ans_name)
                 self.image_item.appendRow(ans_item)
-            if not item["isTrained"]:
-                ans_item.setData(Qt.red, Qt.TextColorRole)
-            else:
-                ans_item.setData(Qt.green, Qt.TextColorRole)
+                self.item_num[1] += 1

@@ -18,6 +18,7 @@ def check_case_directory(dirname) -> str:
 
 def import_json_info(dirpath: str) -> list:
     filepath = dirpath + r"/config.json"
-    print(filepath)
     f = open(filepath, "r+", encoding='utf-8')
-    return json.load(f)
+    data = json.load(f)
+    f.close()
+    return data

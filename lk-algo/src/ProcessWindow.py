@@ -25,6 +25,9 @@ class ProcessWindow(QMainWindow):
         self.cid_cname = dict()
         self.config = []
 
+        self.now_cid = ""
+        self.now_cname = ""
+
         self._init_static_gui()
 
     def _center(self) -> None:
@@ -68,7 +71,6 @@ class ProcessWindow(QMainWindow):
         tabs.addTab(self.infer_tab, "推理")
 
         self._init_train_tab()
-
         self.setCentralWidget(tabs)
 
     def _init_status(self):
@@ -82,12 +84,26 @@ class ProcessWindow(QMainWindow):
     def _init_train_tab(self):
         aside_tree = AsideTreeView(parent=self.train_tab, config=self.config)
         self.train_main_widget = QStackedWidget()
-        stacked_widgets = [
-            TPreProcessWidget(), TAlgoSelectWidget(), TSettingWidget(), TStartExportWidget(),
-            IPreProcessWidget(), IAlgoSelectWidget(), ISettingWidget(), IStartExportWidget()
-                           ]
-        for sw in stacked_widgets:
-            self.train_main_widget.addWidget(sw)
+        self.train_main_widget.addWidget(QWidget())
+
+        tabular_case_path = osp.join("../data", self.sql_handle.config["username"], self.now_cname, "tabular")
+        image_case_path = osp.join("../data", self.sql_handle.config["username"], self.now_cname, "image")
+
+        for _ in range(aside_tree.item_num[0]):
+            t_stacked_widgets = [
+                TPreProcessWidget(),
+                TAlgoSelectWidget(task_type=self.sql_handle.get_task_type(cid=self.config[0]["cid"], mode="tabular")),
+                TSettingWidget(),
+                TStartExportWidget(case_path=tabular_case_path),
+            ]
+            for t in t_stacked_widgets:
+                self.train_main_widget.addWidget(t)
+        for _ in range(aside_tree.item_num[1]):
+            i_stacked_widgets = [
+                IPreProcessWidget(), IAlgoSelectWidget(), ISettingWidget(), IStartExportWidget(),
+            ]
+            for i in i_stacked_widgets:
+                self.train_main_widget.addWidget(i)
 
         h_layout = QHBoxLayout()
         h_layout.addWidget(aside_tree)
@@ -101,12 +117,8 @@ class ProcessWindow(QMainWindow):
     def _tree_change_widget(self, element):
         parent = element.parent()
         if parent.parent().isValid():
-            filename = parent.data()
-            if filename.endswith("xlsx"):
-                stack_index = 0
-            else:
-                stack_index = 4
+            parent_index = parent.row()
             widget_index = element.row()
-            self.train_main_widget.setCurrentIndex(widget_index + stack_index)
+            self.train_main_widget.setCurrentIndex(parent_index * 4 + widget_index + 1)
         else:
             pass
