@@ -1,12 +1,15 @@
 import traceback
 import sys
 from PyQt5.QtWidgets import *
+import warnings
 
 from connector.SqlHandle import SqlHandle
 
 from component.MsgBox import WarningBox
 
 from ProcessWindow import ProcessWindow
+
+warnings.filterwarnings("ignore")
 
 
 class MainWindow(QMainWindow):
@@ -19,18 +22,18 @@ class MainWindow(QMainWindow):
         self._center()
         self._init_gui()
 
-    def _center(self):
+    def _center(self) -> None:
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
         self.move((screen.width() - size.width()) // 2, (screen.height() - size.height()) // 2)
 
-    def _catch_error(self, ty, value, tb):
+    def _catch_error(self, ty, value, tb) -> None:
         traceback_format = traceback.format_exception(ty, value, tb)
         traceback_string = "".join(traceback_format)
         QMessageBox.critical(self, "额外报错，请联系作者解决", "{}".format(traceback_string))
         self.old_hook(ty, value, tb)
 
-    def _init_gui(self):
+    def _init_gui(self) -> None:
         widget = QWidget()
 
         v_layout = QVBoxLayout()
@@ -66,7 +69,7 @@ class MainWindow(QMainWindow):
         widget.setLayout(v_layout)
         self.setCentralWidget(widget)
 
-    def _login(self):
+    def _login(self) -> None:
         username = self.username_text.text()
         password = self.password_text.text()
         flag = self.sql_handle.login(username, password)
@@ -77,7 +80,7 @@ class MainWindow(QMainWindow):
         else:
             WarningBox(self, "出错", "登陆失败, 请检查用户名和密码")
 
-    def _reset(self):
+    def _reset(self) -> None:
         self.sql_handle.reset()
         self.username_text.clear()
         self.password_text.clear()

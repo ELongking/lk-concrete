@@ -1,1 +1,1 @@
-__all__ = ["Prediction", "PreProcess", "AlgoSpace", "CalcProcess", "LogText"]
+__all__ = ["Prediction", "PreProcess", "AlgoSpace", "CalcProcess", "LogText", "PmmlConvert"]

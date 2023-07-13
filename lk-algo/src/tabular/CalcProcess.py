@@ -4,19 +4,17 @@ import joblib
 import os.path as osp
 import numpy as np
 import pandas as pd
-from PyQt5.QtCore import pyqtSignal
 from hyperopt import Trials, fmin, tpe, space_eval
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
 from sklearn.model_selection import KFold
 
-from AlgoSpace import *
+from .LogText import LoggerHandler
 
 from typing import List, Tuple, Any
 
-from LogText import LoggerHandler
 
-
-def algo_filter(task_type: str,
+def algo_filter(ad: dict,
+                task_type: str,
                 train_x: np.array,
                 train_y: np.array,
                 valid_x: np.array,
@@ -26,38 +24,83 @@ def algo_filter(task_type: str,
                 lh: LoggerHandler) -> Tuple[List, Any]:
     lh.tab_browser_emit(text="筛选步骤即将开始", step=2, level=2)
 
-    algo_dict = AlgoRegDict.copy() if task_type == "reg" else AlgoClsDict.copy()
+    algo_dict = ad.copy()
     model = []
-    acc_train = []
-    acc_val = []
-    mse_train = []
-    mse_val = []
 
-    for key in algo_dict.keys():
-        algo_dict[key].fit(train_x, train_y.ravel())
-        acc_train.append(algo_dict[key].score(train_x, train_y.ravel()))
-        acc_val.append(algo_dict[key].score(valid_x, valid_y.ravel()))
+    if task_type == "reg":
+        acc_train = []
+        acc_val = []
+        mse_train = []
+        mse_val = []
 
-        train_pred = algo_dict[key].predict(train_x)
-        val_pred = algo_dict[key].predict(valid_x)
+        for key in algo_dict.keys():
+            algo_dict[key].fit(train_x, train_y.ravel())
+            acc_train.append(algo_dict[key].score(train_x, train_y))
+            acc_val.append(algo_dict[key].score(valid_x, valid_y))
 
-        mse_train.append(round(mean_squared_error(train_y, train_pred), 3))
-        mse_val.append(round(mean_squared_error(valid_y, val_pred), 3))
+            train_pred = algo_dict[key].predict(train_x)
+            val_pred = algo_dict[key].predict(valid_x)
+
+            mse_train.append(round(mean_squared_error(train_y, train_pred), 3))
+            mse_val.append(round(mean_squared_error(valid_y, val_pred), 3))
+
+            model.append(key)
 
         mod = pd.DataFrame(
             [model, acc_train, acc_val, mse_train, mse_val, ]).T
         mod.columns = ['model', 'score_train', 'score_val', 'mse_train', 'mse_val']
         top_5_part = mod.sort_values(by='score_val', ascending=False)
-        models = top_5_part.iloc[0:5, 0].tolist()
-        lh.tab_browser_emit(text=f"筛选模型为: {', '.join(models)}", step=2, level=3)
+        models = top_5_part.iloc[:, 0].tolist()
+        scores = top_5_part.iloc[:, 2].tolist()
+        filter_models = []
+        for i in range(len(scores)):
+            if scores[i] >= scores[0] * 0.98:
+                filter_models.append(models[i])
+            else:
+                break
+        filter_models = filter_models[:5] if len(filter_models) > 5 else filter_models
+        lh.tab_browser_emit(text=f"筛选模型为: {', '.join(filter_models)}", step=2, level=3)
 
-        score = r2_score(test_y, algo_dict[models[0]].predict(test_x))
-        lh.tab_browser_emit(text=f"筛选步骤得到最好效果的模型为: {models[0]}, 测试集得分为: {score}", step=2, level=3)
-        return models, (models[0], algo_dict[key], score)
+        score = r2_score(test_y, algo_dict[filter_models[0]].predict(test_x))
+        lh.tab_browser_emit(text=f"筛选步骤得到最好效果的模型为: {filter_models[0]}, 测试集得分为: {score}", step=2, level=3)
+
+    else:
+        acc_train = []
+        acc_val = []
+
+        for key in algo_dict.keys():
+            algo_dict[key].fit(train_x, train_y.ravel())
+
+            train_pred = algo_dict[key].predict(train_x)
+            val_pred = algo_dict[key].predict(valid_x)
+
+            acc_train.append(accuracy_score(train_y, train_pred))
+            acc_val.append(accuracy_score(valid_y, val_pred))
+
+        mod = pd.DataFrame(
+            [model, acc_train, acc_val]).T
+        mod.columns = ['model', 'acc_train', 'acc_val']
+        top_5_part = mod.sort_values(by='acc_val', ascending=False)
+        models = top_5_part.iloc[:, 0].tolist()
+        scores = top_5_part.iloc[:, 2].tolist()
+        filter_models = []
+        for i in range(len(scores)):
+            if scores[i] >= scores[0] * 0.98:
+                filter_models.append(models[i])
+            else:
+                break
+        filter_models = filter_models[:5] if len(filter_models) > 5 else filter_models
+        lh.tab_browser_emit(text=f"筛选模型为: {', '.join(filter_models)}", step=2, level=3)
+
+        score = accuracy_score(test_y, algo_dict[filter_models[0]].predict(test_x))
+        lh.tab_browser_emit(text=f"筛选步骤得到最好效果的模型为: {filter_models[0]}, 测试集得分为: {score}", step=2, level=3)
+
+    return filter_models, (filter_models[0], algo_dict[filter_models[0]], score)
 
 
 def hyperparams_extract(models: list,
-                        task_type: str,
+                        ado: dict,
+                        params_space: callable,
                         train_x: np.array,
                         train_y: np.array,
                         valid_x: np.array,
@@ -68,8 +111,7 @@ def hyperparams_extract(models: list,
     _add = f"(特征筛选-No.{idx})" if is_var else ""
     lh.tab_browser_emit(text=f"参数优化步骤准备开始{_add}", step=2, level=2)
 
-    algo_dict_optimize = AlgoRegDictOptimize.copy() if task_type == "reg" else AlgoClsDictOptimize.copy()
-    params_space = reg_params_space if task_type == "reg" else cls_params_space
+    algo_dict_optimize = ado.copy()
     xn = train_x.shape[0]
 
     model_after_params_optimize = defaultdict(dict)
@@ -94,7 +136,10 @@ def hyperparams_extract(models: list,
 
         model = algo_dict_optimize[mod]
         trials = Trials()
-        res = fmin(hyper_on, space=params_space(mod, xn), trials=trials, algo=tpe.suggest,
+        res = fmin(hyper_on,
+                   space=params_space(mod, xn),
+                   trials=trials,
+                   algo=tpe.suggest,
                    max_evals=100)
         res = space_eval(params_space(mod, xn), res)
 
@@ -144,7 +189,8 @@ def variable_selected(model_name: str,
                       valid_y: np.array,
                       test_x: np.array,
                       test_y: np.array,
-                      task_type: str,
+                      ado: dict,
+                      params_space: callable,
                       lh: LoggerHandler) -> Tuple:
     lh.tab_browser_emit(text="特征值筛选步骤准备开始...", step=2, level=2)
 
@@ -167,7 +213,8 @@ def variable_selected(model_name: str,
                                           train_y=train_y,
                                           valid_x=child_valid_x,
                                           valid_y=valid_y,
-                                          task_type=task_type,
+                                          ado=ado,
+                                          params_space=params_space,
                                           lh=lh,
                                           is_var=True,
                                           idx=idx)

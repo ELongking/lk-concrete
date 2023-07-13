@@ -3,16 +3,18 @@ import traceback
 import time
 import sys
 
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 from sklearn.utils import shuffle
 
-from PreProcess import *
-from CalcProcess import *
-from LogText import LoggerHandler
+from .PmmlConvert import AlgoConverter
+from .PreProcess import *
+from .CalcProcess import *
+from .LogText import LoggerHandler
 
 
 class PredictionThread(QThread):
     signal = pyqtSignal(str)
+    bool_signal = pyqtSignal(bool)
 
     def __init__(
             self,
@@ -28,6 +30,7 @@ class PredictionThread(QThread):
         self.setting_config = setting_config
         self.opt_path = opt_path
         self.task_type = task_type
+        self.pipeline = []
         self.logger = LoggerHandler(opt_path=opt_path,
                                     signal=self.signal)
 
@@ -42,10 +45,13 @@ class PredictionThread(QThread):
         self.quit()
         self.old_hook(ty, value, tb)
 
-    def __del__(self):
-        self.wait()
+    def quit(self):
+        self.bool_signal.emit(False)
+        super().quit()
 
     def run(self) -> None:
+        self.bool_signal.emit(True)
+
         self.logger.init_logger()
         start_time = time.time()
         os.makedirs(self.opt_path, exist_ok=True)
@@ -68,34 +74,45 @@ class PredictionThread(QThread):
 
         xdata, scaler = data_normalization(xdata=xdata, mode=self.setting_config["normalize"])
         joblib.dump(scaler, osp.join(self.opt_path, "scaler.pkl"))
+        self.pipeline.append(("scaler", scaler))
         self.logger.tab_browser_emit(f"数据标准化完毕, 选择的方法为{self.setting_config['normalize']}", step=1, level=2)
 
+        algo_dict, algo_dict_optimize, params_space = filter_algo_dicts(algos=self.setting_config["algos"],
+                                                                        mode=self.task_type)
         self.logger.tab_browser_emit(f"前处理步骤完毕", step=1, level=1)
 
         train_x, train_y, valid_x, valid_y, test_x, test_y = train_test_split(xdata=xdata, ydata=ydata)
         for idx, target in enumerate(self.data_config["rightData"]):
             self.logger.tab_browser_emit(f"预测模型构建步骤准备开始, 现在的目标值: {target}", step=2, level=1)
-
             tr_y, vl_y, te_y = train_y[:, idx], valid_y[:, idx], test_y[:, idx]
-            models, filter_res = algo_filter(task_type=self.task_type,
-                                             train_x=train_x,
-                                             train_y=tr_y,
-                                             valid_x=valid_x,
-                                             valid_y=vl_y,
-                                             test_x=test_x,
-                                             test_y=te_y,
-                                             lh=self.logger)
-            save_model(model=filter_res[1], model_name=filter_res[0], opt_path=self.opt_path, desc=[target, "filter"])
+
+            models, res = algo_filter(ad=algo_dict,
+                                      task_type=self.task_type,
+                                      train_x=train_x,
+                                      train_y=tr_y,
+                                      valid_x=valid_x,
+                                      valid_y=vl_y,
+                                      test_x=test_x,
+                                      test_y=te_y,
+                                      lh=self.logger)
+            if res[-1] < 0.6:
+                self.logger.tab_browser_emit(text="模型表现较差, 即数据间相关性较低, 无法得到具有可靠性的模型, 因此流程直接中止。",
+                                             step=2,
+                                             level=2)
+                return
+            save_model(model=res[1], model_name=res[0], opt_path=self.opt_path, desc=[target, "filter"])
+            if self.setting_config["inferIndex"] == 0:
+                self.pipeline.append((res[0], res[1]))
 
             if self.setting_config["isOptimized"]:
                 best_models = hyperparams_extract(models=models,
-                                                  task_type=self.task_type,
+                                                  ado=algo_dict_optimize,
+                                                  params_space=params_space,
                                                   train_x=train_x,
                                                   train_y=tr_y,
                                                   valid_x=valid_x,
                                                   valid_y=vl_y,
                                                   lh=self.logger)
-
                 best_score = float("-inf")
                 res = None
                 for name, algo in best_models.items():
@@ -111,29 +128,44 @@ class PredictionThread(QThread):
                                                  step=2,
                                                  level=2)
                     return
+
                 save_model(model=res[1],
                            model_name=res[0],
                            opt_path=self.opt_path,
                            desc=[target, "base", "optimized"])
+                if self.setting_config["inferIndex"] == 1:
+                    self.pipeline.append((res[0], res[1]))
 
-                if self.setting_config["isVarSelected"]:
-                    importance_weight = get_variable_importance(model=res[1],
-                                                                name=res[0])
-                    selected_res = variable_selected(model_name=res[0],
-                                                     imp=importance_weight,
-                                                     xcols=self.data_config["leftData"],
-                                                     train_x=train_x,
-                                                     train_y=tr_y,
-                                                     valid_x=valid_x,
-                                                     valid_y=vl_y,
-                                                     test_x=test_x,
-                                                     test_y=te_y,
-                                                     task_type=self.task_type,
-                                                     lh=self.logger)
-                    save_model(model=selected_res[1],
-                               model_name=selected_res[0],
-                               opt_path=self.opt_path,
-                               desc=[target, "deep", "optimized"])
+            if self.setting_config["isVarSelected"]:
+                importance_weight = get_variable_importance(model=res[1],
+                                                            name=res[0])
+                res = variable_selected(model_name=res[0],
+                                        imp=importance_weight,
+                                        xcols=self.data_config["leftData"],
+                                        train_x=train_x,
+                                        train_y=tr_y,
+                                        valid_x=valid_x,
+                                        valid_y=vl_y,
+                                        test_x=test_x,
+                                        test_y=te_y,
+                                        ado=algo_dict_optimize,
+                                        params_space=params_space,
+                                        lh=self.logger)
+                if res[-1] < 0.6:
+                    self.logger.tab_browser_emit(text="模型表现较差, 即数据间相关性较低, 无法得到具有可靠性的模型, 因此流程直接中止。",
+                                                 step=2,
+                                                 level=2)
+                    return
+                save_model(model=res[1],
+                           model_name=res[0],
+                           opt_path=self.opt_path,
+                           desc=[target, "deep", "optimized"])
+                if self.setting_config["inferIndex"] == 2:
+                    label = res[-1]
+                    f = open(osp.join(self.opt_path, "infer.txt"), "w", encoding='utf-8')
+                    f.writelines(','.join(label))
+                    f.close()
+                    self.pipeline.append((res[0], res[1]))
 
             if self.setting_config["isAutoImported"]:
                 self.logger.tab_browser_emit("AutoML方法进行中, 最长运行时间5分钟", step=3, level=1)
@@ -149,7 +181,11 @@ class PredictionThread(QThread):
                                         opt_path="./temp", )
                 self.logger.tab_browser_emit(f"AutoML方法模型验证集得分为: {score}", step=3, level=1)
 
+        converter = AlgoConverter()
+        converter.add_element(pipeline=self.pipeline)
+        converter.export(path=osp.join(self.opt_path, "infer"))
+
         end_time = time.time()
         self.logger.normal_browser_emit(
             text="-" * 10 + f" 流程完毕, 总共时间消耗为: {round(end_time - start_time, 3)}min " + "-" * 10)
-
+        self.quit()

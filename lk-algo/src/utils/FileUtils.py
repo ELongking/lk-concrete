@@ -21,4 +21,5 @@ def import_json_info(dirpath: str) -> list:
     f = open(filepath, "r+", encoding='utf-8')
     data = json.load(f)
     f.close()
-    return data
+    new_data = sorted(data, key=lambda x: x["fileType"] == "image")
+    return new_data

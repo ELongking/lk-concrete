@@ -11,7 +11,7 @@ class LoggerHandler:
         self.logger = logger
 
     def init_logger(self):
-        self.logger.add(sink=osp.join(self.opt_path, f"Tabular-{dt.now().strftime('%Y%m%d_%H%M%S')}"))
+        self.logger.add(sink=osp.join(self.opt_path, f"Tabular-{dt.now().strftime('%Y%m%d_%H%M%S')}.log"))
 
     def normal_browser_emit(self, text) -> None:
         time_tag = dt.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -22,7 +22,7 @@ class LoggerHandler:
         assert step > 0
         assert level > 0
 
-        arrow = "- " * level + f"{step}.{level}" + " -" * level + ">"
+        arrow = "  " * (level - 1) + "- " + f"[{step}.{level}]" + " -" + ">"
         time_tag = dt.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         res = f"{arrow} {time_tag} || {text}"
         self.signal.emit(res)

@@ -89,16 +89,24 @@ class ProcessWindow(QMainWindow):
         tabular_case_path = osp.join("../data", self.sql_handle.config["username"], self.now_cname, "tabular")
         image_case_path = osp.join("../data", self.sql_handle.config["username"], self.now_cname, "image")
 
+        index = 0
+        task_type = self.sql_handle.get_task_type(cid=self.config[0]["cid"], mode="tabular")
         for _ in range(aside_tree.item_num[0]):
+            index += 1
             t_stacked_widgets = [
-                TPreProcessWidget(),
-                TAlgoSelectWidget(task_type=self.sql_handle.get_task_type(cid=self.config[0]["cid"], mode="tabular")),
-                TSettingWidget(),
-                TStartExportWidget(case_path=tabular_case_path),
+                TPreProcessWidget(index=index),
+                TAlgoSelectWidget(index=index,
+                                  task_type=task_type),
+                TSettingWidget(index=index),
+                TStartExportWidget(index=index,
+                                   case_path=tabular_case_path,
+                                   task_type=task_type),
             ]
+            t_stacked_widgets[-1].import_widgets(widgets=t_stacked_widgets[:3], data_config=self.config[index - 1])
             for t in t_stacked_widgets:
                 self.train_main_widget.addWidget(t)
         for _ in range(aside_tree.item_num[1]):
+            index += 1
             i_stacked_widgets = [
                 IPreProcessWidget(), IAlgoSelectWidget(), ISettingWidget(), IStartExportWidget(),
             ]

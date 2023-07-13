@@ -5,14 +5,17 @@ from typing import Tuple, Any
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler
 from sklearn.covariance import EllipticEnvelope
 
+from .AlgoSpace import *
+
 
 def train_test_split(xdata: np.array, ydata: np.array, train_size=0.7, valid_size=0.2) \
         -> Tuple[np.array, np.array, np.array, np.array, np.array, np.array]:
     num = xdata.shape[0]
-    train_x, train_y = xdata[:int(num * train_size)], ydata[:int(num * train_size)]
-    valid_x, valid_y = xdata[int(num * train_size): int(num * valid_size)], ydata[int(num * train_size): int(
-        num * valid_size)]
-    test_x, test_y = xdata[int(num * (1 - train_size - valid_size)):], ydata[int(num * (1 - train_size - valid_size)):]
+    train_x, train_y = xdata[:int(num * train_size), :], ydata[:int(num * train_size), :]
+    valid_x, valid_y = xdata[int(num * train_size): int(num * (train_size + valid_size)), :], \
+                       ydata[int(num * train_size): int(num * (train_size + valid_size)), :]
+    test_x, test_y = xdata[int(num * (1 - train_size - valid_size)):, :], \
+                     ydata[int(num * (1 - train_size - valid_size)):, :]
     return train_x, train_y, valid_x, valid_y, test_x, test_y
 
 
@@ -43,7 +46,7 @@ def default_value_convert(df: pd.DataFrame, mode: str) -> pd.DataFrame:
     elif mode == "mean":
         mean = df.mean()
         for col in range(len(mean)):
-            df.fillna()
+            df.fillna(mean, inplace=True)
     else:
         df.dropna(inplace=True)
     return df
@@ -70,3 +73,20 @@ def data_normalization(xdata: np.array, mode: str) -> Tuple[Any, Any]:
         xdata = scaler.fit_transform(xdata)
 
     return xdata, scaler
+
+
+def filter_algo_dicts(algos: list, mode: str) -> Tuple:
+    _algo_dict = AlgoRegDict if mode == "reg" else AlgoClsDict
+    _algo_dict_optimize = AlgoRegDictOptimize if mode == "reg" else AlgoClsDictOptimize
+
+    algo_dict, algo_dict_optimize = dict(), dict()
+    for key, val in _algo_dict.items():
+        if key in algos:
+            algo_dict[key] = val
+    for key, val in _algo_dict_optimize.items():
+        if key in algos:
+            algo_dict_optimize[key] = val
+
+    params_space = reg_params_space if mode == "reg" else cls_params_space
+
+    return algo_dict, algo_dict_optimize, params_space

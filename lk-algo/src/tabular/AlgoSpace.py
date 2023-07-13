@@ -66,7 +66,7 @@ def reg_params_space(algo_name: str, xn: int) -> dict:
         return {
             'alpha': hp.uniform('alpha', 0.001, 10),
             'l1_ratio': hp.uniform('l1_ratio', 0, 1),
-            'max_iter': hp.choice('max_iter', range(100 * xn, 1000 * xn)),
+            'max_iter': hp.choice('max_iter', range(50 * xn, 500 * xn)),
             "tol": hp.uniform("tol", 0, 1e-3)
         }
 
@@ -74,14 +74,14 @@ def reg_params_space(algo_name: str, xn: int) -> dict:
         return {
             'alpha': hp.uniform('alpha', 0.001, 1),
             'selection': hp.choice('selection', ['cyclic', 'random']),
-            'max_iter': hp.choice('max_iter', range(100 * xn, 1000 * xn + 1)),
+            'max_iter': hp.choice('max_iter', range(50 * xn, 500 * xn + 1)),
             "tol": hp.uniform("tol", 0, 1e-3)
         }
 
     elif algo_name == 'Ridge':
         return {
             'alpha': hp.uniform('alpha', 0.001, 10),
-            'max_iter': hp.choice('max_iter', range(100 * xn, 1000 * xn + 1)),
+            'max_iter': hp.choice('max_iter', range(50 * xn, 500 * xn + 1)),
             'solver': hp.choice('solver', ['svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag']),
             "tol": hp.uniform("tol", 0, 1e-3)
         }
@@ -91,7 +91,7 @@ def reg_params_space(algo_name: str, xn: int) -> dict:
             'max_depth': hp.choice('max_depth', range(5, 51)),
             'min_samples_split': hp.choice('min_samples_split', range(2, 21)),
             'min_samples_leaf': hp.choice('min_samples_leaf', range(1, 11)),
-            'n_estimators': hp.choice('n_estimators', range(10 * xn, 100 * xn + 1))
+            'n_estimators': hp.choice('n_estimators', range(5 * xn, 50 * xn + 1))
         }
 
 
@@ -120,14 +120,12 @@ def reg_params_space(algo_name: str, xn: int) -> dict:
             'n_estimators': hp.choice('n_estimators', range(50 * xn, 200 * xn))
         }
 
-
-
     elif algo_name == 'LightGBM':
         return {
             'reg_alpha': hp.uniform('reg_alpha', 0, 1),
             'reg_lambda': hp.uniform('reg_lambda', 0, 1),
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.3),
-            'max_depth': hp.choice('max_depth', range(4, int(10 * math.log(xn)) + 1)),
+            'max_depth': hp.choice('max_depth', range(4, int(6 * math.log(xn)) + 1)),
             'min_child_samples': hp.choice('min_child_samples', range(1, 21)),
             'min_child_weight': hp.uniform('min_child_weight', 0, 10)
         }
@@ -135,11 +133,11 @@ def reg_params_space(algo_name: str, xn: int) -> dict:
     elif algo_name == 'CatBoost':
         return {
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.3),
-            'iterations': hp.choice('iterations', [20]),
+            'iterations': hp.choice('iterations', [15]),
             'l2_leaf_reg': hp.uniform('l2_leaf_reg', 1, 11),
             'bagging_temperature': hp.uniform('bagging_temperature', 0.02, 1),
             'boosting_type': hp.choice('boosting_type', ['Ordered', 'Plain']),
-            'depth': hp.choice('depth', range(4, int(10 * math.log(xn)) + 1)),
+            'depth': hp.choice('depth', range(4, 17)),
             'leaf_estimation_method': hp.choice('leaf_estimation_method', ['Newton', 'Gradient']),
             'random_strength': hp.choice('random_strength', range(1, 102)),
             'verbose': hp.choice('verbose', [False]),
@@ -151,8 +149,8 @@ def reg_params_space(algo_name: str, xn: int) -> dict:
             'reg_alpha': hp.uniform('reg_alpha', 0, 1),
             'reg_lambda': hp.uniform('reg_lambda', 0, 1),
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.3),
-            'max_depth': hp.choice('max_depth', range(4, int(10 * math.log(xn)) + 1)),
-            'n_estimators': hp.choice('n_estimators', range(xn, 100 * xn + 1)),
+            'max_depth': hp.choice('max_depth', range(4, int(6 * math.log(xn)) + 1)),
+            'n_estimators': hp.choice('n_estimators', range(xn, 50 * xn + 1)),
             'min_child_weight': hp.uniform('min_child_weight', 1, 10)
         }
 
@@ -163,7 +161,7 @@ def cls_params_space(algo_name: str, xn: int) -> dict:
             'max_depth': hp.choice('max_depth', range(5, 51)),
             'min_samples_split': hp.choice('min_samples_split', range(2, 21)),
             'min_samples_leaf': hp.choice('min_samples_leaf', range(1, 11)),
-            'n_estimators': hp.choice('n_estimators', range(10 * xn, 100 * xn + 1))
+            'n_estimators': hp.choice('n_estimators', range(5 * xn, 50 * xn + 1))
         }
 
     elif algo_name == 'DecisionTree':
@@ -196,7 +194,7 @@ def cls_params_space(algo_name: str, xn: int) -> dict:
             'reg_alpha': hp.uniform('reg_alpha', 0, 1),
             'reg_lambda': hp.uniform('reg_lambda', 0, 1),
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.3),
-            'max_depth': hp.choice('max_depth', range(4, int(10 * math.log(xn)) + 1)),
+            'max_depth': hp.choice('max_depth', range(4, int(6 * math.log(xn)) + 1)),
             'min_child_samples': hp.choice('min_child_samples', range(1, 21)),
             'min_child_weight': hp.uniform('min_child_weight', 0, 10)
         }
@@ -204,11 +202,11 @@ def cls_params_space(algo_name: str, xn: int) -> dict:
     elif algo_name == 'CatBoost':
         return {
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.3),
-            'iterations': hp.choice('iterations', [20]),
+            'iterations': hp.choice('iterations', [15]),
             'l2_leaf_reg': hp.uniform('l2_leaf_reg', 1, 11),
             'bagging_temperature': hp.uniform('bagging_temperature', 0.02, 1),
             'boosting_type': hp.choice('boosting_type', ['Ordered', 'Plain']),
-            'depth': hp.choice('depth', range(4, int(10 * math.log(xn)) + 1)),
+            'depth': hp.choice('depth', range(4, 17)),
             'leaf_estimation_method': hp.choice('leaf_estimation_method', ['Newton', 'Gradient']),
             'random_strength': hp.choice('random_strength', range(1, 102)),
             'verbose': hp.choice('verbose', [False]),
@@ -220,7 +218,7 @@ def cls_params_space(algo_name: str, xn: int) -> dict:
             'reg_alpha': hp.uniform('reg_alpha', 0, 1),
             'reg_lambda': hp.uniform('reg_lambda', 0, 1),
             'learning_rate': hp.uniform('learning_rate', 0.01, 0.3),
-            'max_depth': hp.choice('max_depth', range(4, int(10 * math.log(xn)) + 1)),
-            'n_estimators': hp.choice('n_estimators', range(xn, 100 * xn + 1)),
+            'max_depth': hp.choice('max_depth', range(4, int(6 * math.log(xn)) + 1)),
+            'n_estimators': hp.choice('n_estimators', range(xn, 50 * xn + 1)),
             'min_child_weight': hp.uniform('min_child_weight', 1, 10)
         }
