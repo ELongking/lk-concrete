@@ -23,9 +23,11 @@ def xy_split(df: pd.DataFrame, xcols: list, ycols: list) -> Tuple[pd.DataFrame, 
     return df.loc[:, xcols], df.loc[:, ycols]
 
 
-def hotpoint_first(df: pd.DataFrame) -> pd.DataFrame:
+def hotpoint_first(df: pd.DataFrame) -> Tuple:
+    cats_encoder = dict()
+
     for col in range(df.shape[1]):
-        mem = set()
+        mem = []
         for row in range(df.shape[0]):
             ans = df.iloc[row, col]
             if pd.isnull(ans):
@@ -35,9 +37,12 @@ def hotpoint_first(df: pd.DataFrame) -> pd.DataFrame:
                     ans = float(ans)
                 except:
                     ans = len(mem) + 1
-                    mem.add(ans)
+                    if ans not in mem:
+                        mem.append(ans)
                 df.iloc[row, col] = ans
-    return df
+
+            cats_encoder[df.columns[col]] = mem
+    return df, cats_encoder
 
 
 def default_value_convert(df: pd.DataFrame, mode: str) -> pd.DataFrame:

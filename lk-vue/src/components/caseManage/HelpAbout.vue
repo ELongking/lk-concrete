@@ -14,7 +14,7 @@
       <h2 class="branchTitle" id="xunlian">训练</h2>
       <p>
         我个人比较了市面上的一些Deep Learning Based on Java的方法, 感觉不是很方便
-        （毕竟Java主要是写中间件的也不是干这个的）。理论上是远程服务器训练较好, 但是众所周知我这里没有什么服务器,
+        （毕竟Java主要是写中间件的也不是干这个的）。理论上是网页端发送请求给后台服务器处理, 但是众所周知我个人这里没有什么额外服务器,
         因此这边选择的是使用额外由Python编写的软件进行训练, 相当于将客户端和服务器端划成一个了。下载地址如下：
       </p>
       <el-collapse style="width: 80%; margin: 0 auto;" accordion>

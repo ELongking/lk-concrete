@@ -199,12 +199,11 @@ class TStartExportWidget(QWidget):
         for widget in self.widgets:
             self.setting_config.update(widget.export())
 
-        df_path = osp.join(self.case_path, osp.basename(self.data_config["fileName"]))
-        df = pd.read_excel(df_path)
+        df_path = osp.join(self.case_path, self.data_config["fileName"])
         self.thread = PredictionThread(setting_config=self.setting_config,
                                        data_config=self.data_config,
                                        task_type=self.task_type,
-                                       df=df,
+                                       df_path=df_path,
                                        opt_path=osp.join(self.case_path, "output"))
         self.thread.signal.connect(self._log_text_show)
         self.thread.bool_signal.connect(self._stop_enabled_changed)

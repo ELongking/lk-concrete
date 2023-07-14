@@ -127,13 +127,54 @@
                     <el-transfer
                         :data="item.cols"
                         :titles="['Labels', 'Targets']"
+                        v-model="item._selectData"
                         filterable
-                        v-model="item.rightData"
-                        :left-defaults="item.leftData"
-                        :right-defaults="item.rightData"
                         :button-texts="['选择为x', '选择为y']"
+                        @change="(target, direction, moveKeys) => transferChange(target, direction, moveKeys, item)"
                     />
                   </el-col>
+                </el-row>
+                <el-row>
+                  <el-col :span="8">组分关系</el-col>
+                  <el-col :span="8">
+                    <el-button @click="addRelationship(item)">点击添加新的关系</el-button>
+                  </el-col>
+                </el-row>
+                <el-row>
+                  <el-table :data="item.relData">
+                    <el-table-column prop="subject" label="主体" minWidth="35%">
+                      <template #default="{row}">
+                        <el-select
+                            v-model="row.subject"
+                            @change="(val) => selectChange(val,item, 'object')"
+                            placeholder="请选择主体材料">
+                          <el-option
+                              v-for="(col, col_index) in item.leftData"
+                              :key="col_index"
+                              :label="col"
+                              :value="col"/>
+                        </el-select>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="object" label="客体" minWidth="35%">
+                      <template #default="{row}">
+                        <el-select
+                            v-model="row.object"
+                            @change="(val) => selectChange(val,item, 'object')"
+                            placeholder="请选择主体材料的客体指标">
+                          <el-option v-for="(col, col_index) in item.leftData"
+                                     :key="col_index"
+                                     :label="col"
+                                     :value="col"/>
+                        </el-select>
+                      </template>
+                    </el-table-column>
+                    <el-table-column fixed="right" label="操作" minWidth="15%">
+                      <template #default="scope">
+                        <el-button type="primary" size="small" @click="scope.r">删除</el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
                 </el-row>
                 <el-row>
                   <el-col :span="6">
@@ -170,9 +211,10 @@
 
 <script>
 import axios from "axios";
+import * as lodash from "lodash";
 import MessageBox from "@/components/MessageBox.vue";
 import LeaveMessageBox from "@/components/LeaveMessageBox.vue";
-import {elTransferConvert} from "@/script/utils";
+import {elTransferConvert, getFileOriName} from "@/script/utils";
 
 export default {
   name: "CaseCreate",
@@ -196,23 +238,26 @@ export default {
         tabularType: [{required: false, message: "请选择任务类型"}],
         imageType: [{required: false, message: "请选择任务类型"}]
       },
+      relData: [],
       configForm: [],
       processOne: false,
-      processTwo: false,
       processThree: false,
       forceStop: false,
       deleteMode: "",
     }
   },
   computed: {
-    updatedTxtRules() {
-      this.txtRules = {
+    txtRules: function () {
+      return {
         cname: [{required: true, message: "请输入批次名称"}],
         fileType: [{required: true, message: "请选择需要上传的文件类型"}],
         tabularType: [{required: !["image", ""].includes(this.createForm.fileType), message: "请选择任务类型"}],
         imageType: [{required: !["tabular", ""].includes(this.createForm.fileType), message: "请选择任务类型"}]
       }
     },
+    processTwo: function () {
+      return this.configForm.length !== 0
+    }
   },
   beforeRouteLeave(to, from, next) {
     if (!this.processThree && this.processOne) {
@@ -278,41 +323,45 @@ export default {
         }
       })
     },
+    addRelationship(item) {
+      item.relData.push({"subject": "", "object": ""})
+    },
+    selectChange(val, item, mode) {
+      item[mode] = val
+    },
     uploadSuccess(resp, file) {
       const data = resp.data
       const filename = data.pop()
       let msg = "文件上传成功"
       if (resp.code === 1) {
-        if (["xlsx", "xls"].includes(filename.slice(filename.lastIndexOf('.') + 1))) {
+        if (["xlsx", "xls"].includes(getFileOriName(filename, "suffix"))) {
           let cols = []
           data.forEach(item => {
             cols.push({key: item, label: item})
           })
           const item = {
             cid: this.cid,
-            fileName: filename,
+            fileName: getFileOriName(filename, "name"),
             cols: cols,
             fileType: "tabular",
             isOutput: false,
-            leftData: [],
+            leftData: data,
             rightData: [],
-            isTrained: false
+            relData: [],
+            _selectData: []
           }
           this.configForm.push(item)
-          this.processTwo = true
         } else {
           const item = {
             cid: this.cid,
-            fileName: filename,
+            fileName: getFileOriName(filename, "name"),
             fileType: "image",
             isOutput: false,
             leftData: [],
             rightData: [],
-            cols: [],
-            isTrained: false
+            cols: []
           }
           this.configForm.push(item)
-          this.processTwo = true
         }
       } else {
         msg = "上传文件失败"
@@ -333,6 +382,7 @@ export default {
       axios.post("http://localhost:9000/oss/delete/", ipt).then(resp => {
         let res = resp.data
         if (res.code === 1) {
+          this.configForm = this.configForm.filter(item => item.fileName !== file.name)
           this.boxInfo.title = "提示"
           this.boxInfo.msg = "删除成功"
           this.boxVisible = true
@@ -343,6 +393,13 @@ export default {
           this.boxVisible = true
           return false
         }
+      })
+    },
+    transferChange(target, direction, moveKeys, item) {
+      item.rightData = target
+      item.leftData = lodash.union(item.leftData, item.rightData)
+      target.forEach(n => {
+        item.leftData = lodash.pull(item.leftData, n)
       })
     },
     closeMsgBox() {

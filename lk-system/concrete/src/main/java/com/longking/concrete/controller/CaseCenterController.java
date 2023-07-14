@@ -76,7 +76,7 @@ public class CaseCenterController {
             String type = (String) map.get("fileType");
             if (type.equals("tabular")) {
                 String ansName = (String) map.get("fileName");
-                ansName = "tabular" + "/" + ansName.substring(ansName.lastIndexOf("\\") + 1);
+                System.out.println(ansName);
                 OssObjectDto ansOssObjectDto = ossUtils.getFileObject(uid, cid, ansName);
                 OSSObject ansObject = ansOssObjectDto.getOssObject();
                 Object anaRes = TabularAna.generateTabularDetails(map, ansObject);

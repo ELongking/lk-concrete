@@ -94,7 +94,6 @@ public class TabularAna {
     public static TabularDetails generateTabularDetails(Map<String, Object> jsonMap, OSSObject ossObject) throws Exception {
         String fileName = (String) jsonMap.get("fileName");
         TabularDetails tabularDetails = new TabularDetails();
-        fileName = fileName.substring(fileName.lastIndexOf("\\") + 1);
         long fileSize = ossObject.getObjectMetadata().getContentLength();
 
         List<List<Double>> matrix = generateExcelData(ossObject);

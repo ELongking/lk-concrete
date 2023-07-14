@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 @Data
 @AllArgsConstructor
@@ -15,6 +16,7 @@ public class LogicInfo {
     private String fileType;
     private boolean isOutput;
     private boolean isTrained;
+    private ArrayList<HashMap<String, String>> relData;
     private ArrayList<String> leftData;
     private ArrayList<String> rightData;
     private ArrayList<String> cols;

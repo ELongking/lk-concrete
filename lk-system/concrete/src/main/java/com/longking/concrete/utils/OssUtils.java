@@ -5,6 +5,7 @@ import com.aliyun.oss.model.*;
 import com.longking.concrete.common.CommonResult;
 import com.longking.concrete.config.OssConfig;
 import com.longking.concrete.dto.OssObjectDto;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -30,12 +31,12 @@ public class OssUtils {
         List<String> cols = new ArrayList<>();
         if (mode.equals("tabular")) {
             cols = FileReader.excelReader(absPath);
-            cols.add(absPath);
+            cols.add(file.getName());
         } else {
             String flag = FileReader.compressReader(absPath);
             cols.add(flag);
             if (flag.equals("success")) {
-                return CommonResult.fail(cols, cols.get(0));
+                return CommonResult.success(cols, cols.get(0));
             }
         }
 
@@ -44,7 +45,9 @@ public class OssUtils {
         PutObjectResult res = client.putObject(new PutObjectRequest(bucketName, fileUrl, file));
         client.setBucketAcl(bucketName, CannedAccessControlList.Private);
         client.shutdown();
-        if (res != null) {
+        boolean flag = file.delete();
+
+        if (res != null && flag) {
             return CommonResult.success(cols, "success");
         } else {
             return CommonResult.fail(cols, "上传失败");

@@ -140,7 +140,8 @@ def hyperparams_extract(models: list,
                    space=params_space(mod, xn),
                    trials=trials,
                    algo=tpe.suggest,
-                   max_evals=100)
+                   rstate=42,
+                   max_evals=50)
         res = space_eval(params_space(mod, xn), res)
 
         if mod == 'CatBoost':
@@ -183,6 +184,7 @@ def get_variable_importance(model, name: str) -> List:
 def variable_selected(model_name: str,
                       imp: list,
                       xcols: list,
+                      relationship: list,
                       train_x: np.array,
                       train_y: np.array,
                       valid_x: np.array,
@@ -194,20 +196,44 @@ def variable_selected(model_name: str,
                       lh: LoggerHandler) -> Tuple:
     lh.tab_browser_emit(text="特征值筛选步骤准备开始...", step=2, level=2)
 
-    idx_lst = list(range(1, len(imp) + 1))
+    idx_lst = list(range(0, len(imp)))
     sort_zip = sorted(zip(imp, xcols, idx_lst), key=lambda x: x[0], reverse=True)
-    label = [item[1] for item in sort_zip]
+    sort_label = [item[1] for item in sort_zip]
+    import_col_idx = [item[2] for item in sort_zip]
+    lh.tab_browser_emit(text=f"特征权重从大到小的排列顺序为: {', '.join(sort_label)}", step=2, level=3)
 
-    lh.tab_browser_emit(text=f"特征权重从大到小的排列顺序为: {', '.join(label)}", step=2, level=3)
+    if relationship:
+        sub2obj = defaultdict(list)
+        for rel in relationship:
+            sub2obj[rel["subject"]].append(rel["object"])
+
+        new_sort_zip = []
+        new_label_set = set()
+        for index, i_val, label, col_idx in enumerate(sort_zip):
+            if label in sub2obj.keys():
+                new_sort_zip.append([i_val, label, col_idx])
+                new_label_set.add(label)
+                for _i_val, _label, _col_idx in sort_zip:
+                    if _label in sub2obj[label]:
+                        new_sort_zip.append([_i_val, _label, _col_idx])
+                        new_label_set.add(_label)
+            else:
+                if label not in new_label_set:
+                    new_sort_zip.append([i_val, label, col_idx])
+
+        sort_label = [item[1] for item in new_sort_zip]
+        import_col_idx = [item[2] for item in new_sort_zip]
+        lh.tab_browser_emit(text=f"考虑主次关系后, 特征权重从大到小的排列顺序为: {', '.join(sort_label)}", step=2, level=3)
 
     score_lst = []
     best_score = float("-inf")
     res = tuple()
-    for idx in idx_lst:
-        child_label = label[:idx]
-        child_train_x = train_x.take(idx_lst[0:idx], 1)
-        child_valid_x = valid_x.take(idx_lst[0:idx], 1)
-        child_test_x = test_x.take(idx_lst[0:idx], 1)
+    for idx in range(len(import_col_idx)):
+        child_idx = import_col_idx[:idx]
+        child_label = sort_label[:idx]
+        child_train_x = train_x[:, child_idx]
+        child_valid_x = valid_x[:, child_idx]
+        child_test_x = test_x[:, child_idx]
         child_model = hyperparams_extract(models=[model_name],
                                           train_x=child_train_x,
                                           train_y=train_y,

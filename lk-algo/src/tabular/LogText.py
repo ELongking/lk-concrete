@@ -10,8 +10,8 @@ class LoggerHandler:
         self.signal = signal
         self.logger = logger
 
-    def init_logger(self):
-        self.logger.add(sink=osp.join(self.opt_path, f"Tabular-{dt.now().strftime('%Y%m%d_%H%M%S')}.log"))
+    def init_logger(self, task_name: str):
+        self.logger.add(sink=osp.join(self.opt_path, f"{task_name}-{dt.now().strftime('%Y%m%d_%H%M%S')}.log"))
 
     def normal_browser_emit(self, text) -> None:
         time_tag = dt.now().strftime("%Y-%m-%d %H:%M:%S.%f")

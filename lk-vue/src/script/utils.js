@@ -22,8 +22,18 @@ function timeFormatConvert(timeInt) {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
+function getFileOriName(absName, mode){
+    if (mode === "suffix"){
+        return absName.slice(absName.lastIndexOf('.') + 1)
+    }
+    else if (mode === "name"){
+        return absName.split("/").pop()
+    }
+}
+
 
 function elTransferConvert(jsonObj) {
+
     jsonObj.forEach(item => {
         let ansCols = item.cols
         let newCols = []
@@ -33,15 +43,6 @@ function elTransferConvert(jsonObj) {
         item.cols = newCols
     })
 
-    jsonObj.forEach(item => {
-        let newLeft = []
-        item.cols.forEach(col => {
-            if (!item.rightData.includes(col)){
-                newLeft.push(col)
-            }
-        })
-        item.leftData = newLeft
-    })
     return jsonObj
 }
 
@@ -62,6 +63,8 @@ function sizeFormat(s){
 
 export {
     timeFormatConvert,
+    getFileOriName,
     elTransferConvert,
-    sizeFormat
+    sizeFormat,
+
 }

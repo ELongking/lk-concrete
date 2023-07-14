@@ -1,8 +1,10 @@
+import json
 import os
 import traceback
 import time
 import sys
 
+import pandas as pd
 from PyQt5.QtCore import QThread, pyqtSignal
 from sklearn.utils import shuffle
 
@@ -18,14 +20,14 @@ class PredictionThread(QThread):
 
     def __init__(
             self,
-            df: pd.DataFrame,
+            df_path: str,
             data_config: dict,
             setting_config: dict,
             task_type: str,
             opt_path: str,
     ):
         super(PredictionThread, self).__init__()
-        self.df = df
+        self.df_path = df_path
         self.data_config = data_config
         self.setting_config = setting_config
         self.opt_path = opt_path
@@ -52,13 +54,18 @@ class PredictionThread(QThread):
     def run(self) -> None:
         self.bool_signal.emit(True)
 
-        self.logger.init_logger()
+        self.logger.tab_browser_emit("准备工作开始...", step=1, level=1)
+        task_name = osp.basename(self.df_path).split(".")[0]
+        self.logger.init_logger(task_name=task_name)
         start_time = time.time()
         os.makedirs(self.opt_path, exist_ok=True)
+        df = pd.read_excel(self.df_path)
+        sup = dict()
 
         self.logger.tab_browser_emit("前处理步骤准备开始...", step=1, level=1)
 
-        df = hotpoint_first(df=self.df)
+        df, cats_encoder = hotpoint_first(df=df)
+        sup["encoder"] = cats_encoder
         self.logger.tab_browser_emit("非数值类型转化完毕", step=1, level=2)
 
         df = default_value_convert(df=df, mode=self.setting_config["default"])
@@ -142,6 +149,7 @@ class PredictionThread(QThread):
                 res = variable_selected(model_name=res[0],
                                         imp=importance_weight,
                                         xcols=self.data_config["leftData"],
+                                        relationship=self.data_config["relData"],
                                         train_x=train_x,
                                         train_y=tr_y,
                                         valid_x=valid_x,
@@ -161,10 +169,7 @@ class PredictionThread(QThread):
                            opt_path=self.opt_path,
                            desc=[target, "deep", "optimized"])
                 if self.setting_config["inferIndex"] == 2:
-                    label = res[-1]
-                    f = open(osp.join(self.opt_path, "infer.txt"), "w", encoding='utf-8')
-                    f.writelines(','.join(label))
-                    f.close()
+                    sup["selected_vars"] = res[-1]
                     self.pipeline.append((res[0], res[1]))
 
             if self.setting_config["isAutoImported"]:
@@ -184,6 +189,10 @@ class PredictionThread(QThread):
         converter = AlgoConverter()
         converter.add_element(pipeline=self.pipeline)
         converter.export(path=osp.join(self.opt_path, "infer"))
+
+        f = open(osp.join(self.opt_path, task_name + '-support.json'), "w", encoding="utf-8")
+        json.dump(sup, f)
+        f.close()
 
         end_time = time.time()
         self.logger.normal_browser_emit(

@@ -21,13 +21,14 @@ public class OssController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    @ApiOperation(value="上传文件")
+    @ApiOperation(value = "上传文件")
     @RequestMapping(value = "/upload/{mode}", method = RequestMethod.POST)
-    public CommonResult<List<String>> upload(@RequestParam("file")MultipartFile file,
-                                             @PathVariable(value = "mode")String mode) throws Exception {
-        if (file == null){
+    public CommonResult<List<String>> upload(@RequestParam("file") MultipartFile file,
+                                             @PathVariable(value = "mode") String mode) throws Exception {
+        if (file == null) {
             return CommonResult.fail(null, "上传文件为空");
         } else {
+
             String filename = file.getOriginalFilename();
             assert filename != null;
 
@@ -44,9 +45,9 @@ public class OssController {
     }
 
     @ApiOperation("上传文件删除")
-    @RequestMapping(value="/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
     public CommonResult<String> delete(@RequestParam("filePath") String filepath,
-                                       @RequestParam("mode") String mode){
+                                       @RequestParam("mode") String mode) {
 
         String uid = stringRedisTemplate.opsForValue().get("uid");
         String cid = stringRedisTemplate.opsForValue().get("cid");
