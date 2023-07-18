@@ -39,12 +39,23 @@ class TPreProcessWidget(QWidget):
         self.normal_btn_group.buttons()[0].setChecked(True)
 
         h_layout_3 = QHBoxLayout()
+        hotpoint_label = QLabel("类别编码方法 -> ")
+        h_layout_3.addWidget(hotpoint_label)
+        _all_encoders = ["CatBoost", "Helmert", "JamesStein", "LeaveOneOut",
+                         "MEstimate", "Ordinal", "Sum", "Target",
+                         "WOE"]
+        self.encoder_method_combox = QComboBox()
+        self.encoder_method_combox.addItems(_all_encoders)
+        h_layout_3.addWidget(self.encoder_method_combox)
+
+        h_layout_4 = QHBoxLayout()
         self.ano_check_btn = QRadioButton("异常值舍弃")
-        h_layout_3.addWidget(self.ano_check_btn)
+        h_layout_4.addWidget(self.ano_check_btn)
 
         v_layout.addLayout(h_layout_1)
         v_layout.addLayout(h_layout_2)
         v_layout.addLayout(h_layout_3)
+        v_layout.addLayout(h_layout_4)
         v_layout.setSpacing(30)
 
         self.setLayout(v_layout)
@@ -55,6 +66,7 @@ class TPreProcessWidget(QWidget):
         return {
             "default": _default_value_convert[self.default_btn_group.checkedButton().text()],
             "normalize": _normal_method_convert[self.normal_btn_group.checkedButton().text()],
+            "cats_encoder": self.encoder_method_combox.currentText(),
             "isAnomaly": self.ano_check_btn.isChecked()
         }
 

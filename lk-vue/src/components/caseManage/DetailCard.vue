@@ -178,6 +178,7 @@ import {
   Files,
   DataAnalysis
 } from "@element-plus/icons-vue"
+import axios from "axios";
 
 export default {
   name: "DetailCard",
@@ -199,6 +200,16 @@ export default {
   props: {
     jsonInfo: {type: Array, required: true},
     baseInfo: {type: Array, required: true}
+  },
+  beforeRouteLeave(to, from, next) {
+    axios.post("http://localhost:9000/details/update/" + this.jsonInfo.cid).then(resp => {
+      const code = resp.data.code
+      if (code === 1){
+        next()
+      } else {
+        next(false)
+      }
+    })
   },
   mounted() {
     this.initChart()

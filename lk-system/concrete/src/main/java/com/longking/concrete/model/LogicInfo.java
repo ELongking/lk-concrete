@@ -14,10 +14,7 @@ public class LogicInfo {
     private String cid;
     private String fileName;
     private String fileType;
-    private boolean isOutput;
-    private boolean isTrained;
-    private ArrayList<HashMap<String, String>> relData;
-    private ArrayList<String> leftData;
-    private ArrayList<String> rightData;
+    private boolean isTrained = false;
     private ArrayList<String> cols;
+    private ArrayList<HashMap<String, Object>> setting;
 }

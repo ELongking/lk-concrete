@@ -2,6 +2,8 @@ package com.longking.concrete.analysis;
 
 
 import cn.hutool.poi.excel.ExcelUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson2.util.TypeUtils;
 import com.aliyun.oss.model.OSSObject;
 import com.longking.concrete.model.TabularDetails;
@@ -104,18 +106,23 @@ public class TabularAna {
         tabularDetails.setCid((String) jsonMap.get("cid"));
         tabularDetails.setAllData(matrix);
 
+        List<HashMap<String, Object>> setting = JSON.parseObject(
+                JSON.toJSONString(jsonMap.get("setting")),
+                new TypeReference<List<HashMap<String, Object>>>(){}
+        );
+
         List<String> cols = new ArrayList<>();
         List<String> xCols = new ArrayList<>();
         List<String> yCols = new ArrayList<>();
-        for (Object element : TypeUtils.cast(jsonMap.get("leftData"), String[].class)) {
-            xCols.add(String.valueOf(element));
+
+        for (Map<String, Object> element : setting) {
+            if ((boolean) element.get("isX")) {
+                xCols.add((String) element.get("col"));
+            } else {
+                yCols.add((String) element.get("col"));
+            }
         }
-        for (Object element : TypeUtils.cast(jsonMap.get("rightData"), String[].class)) {
-            yCols.add(String.valueOf(element));
-        }
-        for (Object element : TypeUtils.cast(jsonMap.get("leftData"), String[].class)) {
-            xCols.add(String.valueOf(element));
-        }
+
         for (Object element : TypeUtils.cast(jsonMap.get("cols"), String[].class)) {
             cols.add(String.valueOf(element));
         }

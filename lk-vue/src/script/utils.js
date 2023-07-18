@@ -31,21 +31,6 @@ function getFileOriName(absName, mode){
     }
 }
 
-
-function elTransferConvert(jsonObj) {
-
-    jsonObj.forEach(item => {
-        let ansCols = item.cols
-        let newCols = []
-        ansCols.forEach(col => {
-            newCols.push(col.label)
-        })
-        item.cols = newCols
-    })
-
-    return jsonObj
-}
-
 function sizeFormat(s){
     let allUnit = ["bytes", "Kb", "Mb", "Gb"]
     let index = 0
@@ -64,7 +49,6 @@ function sizeFormat(s){
 export {
     timeFormatConvert,
     getFileOriName,
-    elTransferConvert,
     sizeFormat,
 
 }

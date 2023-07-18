@@ -80,7 +80,7 @@
           >
             <el-button type="primary" @click="this.deleteMode = 'tabular'">点击上传表格文件</el-button>
             <template #tip>
-              <div class="el-upload__tip">仅支持上传xlsx, xls格式</div>
+              <div class="el-upload__tip">仅支持上传xlsx格式</div>
             </template>
           </el-upload>
         </el-col>
@@ -123,72 +123,43 @@
                   </el-col>
                 </el-row>
                 <el-row>
-                  <el-col :span="16">
-                    <el-transfer
-                        :data="item.cols"
-                        :titles="['Labels', 'Targets']"
-                        v-model="item._selectData"
-                        filterable
-                        :button-texts="['选择为x', '选择为y']"
-                        @change="(target, direction, moveKeys) => transferChange(target, direction, moveKeys, item)"
-                    />
+                  <el-col :span="24">
+                    <el-table
+                        :data="item.setting"
+                        style="width: 85%; margin: auto">
+                      <el-table-column prop="col" label="列名"/>
+
+                      <el-table-column label="是否属于X集合">
+                        <template #default="{row}">
+                          <el-checkbox v-model="row.isX"/>
+                        </template>
+                      </el-table-column>
+
+                      <el-table-column label="是否是类别列">
+                        <template #default="{row}">
+                          <el-checkbox v-model="row.isCat"/>
+                        </template>
+                      </el-table-column>
+
+                      <el-table-column label="选择主体">
+                        <template #default="{row}">
+                          <el-select v-model="row.subject" :disabled="!row.isX">
+                            <el-option
+                                v-for="(col, col_index) in item.cols"
+                                :key="col_index"
+                                :label="col"
+                                :value="col"/>
+                          </el-select>
+                        </template>
+                      </el-table-column>
+                    </el-table>
                   </el-col>
                 </el-row>
-                <el-row>
-                  <el-col :span="8">组分关系</el-col>
-                  <el-col :span="8">
-                    <el-button @click="addRelationship(item)">点击添加新的关系</el-button>
-                  </el-col>
-                </el-row>
-                <el-row>
-                  <el-table :data="item.relData">
-                    <el-table-column prop="subject" label="主体" minWidth="35%">
-                      <template #default="{row}">
-                        <el-select
-                            v-model="row.subject"
-                            @change="(val) => selectChange(val,item, 'object')"
-                            placeholder="请选择主体材料">
-                          <el-option
-                              v-for="(col, col_index) in item.leftData"
-                              :key="col_index"
-                              :label="col"
-                              :value="col"/>
-                        </el-select>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="object" label="客体" minWidth="35%">
-                      <template #default="{row}">
-                        <el-select
-                            v-model="row.object"
-                            @change="(val) => selectChange(val,item, 'object')"
-                            placeholder="请选择主体材料的客体指标">
-                          <el-option v-for="(col, col_index) in item.leftData"
-                                     :key="col_index"
-                                     :label="col"
-                                     :value="col"/>
-                        </el-select>
-                      </template>
-                    </el-table-column>
-                    <el-table-column fixed="right" label="操作" minWidth="15%">
-                      <template #default="scope">
-                        <el-button type="primary" size="small" @click="scope.r">删除</el-button>
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </el-row>
-                <el-row>
-                  <el-col :span="6">
-                    <el-radio label="是否是最终的输出结果" v-model="item.isOutput"/>
-                  </el-col>
-                </el-row>
+
               </div>
 
               <div v-if="item.fileType === 'image'">
-                <el-row>
-                  <el-col :span="6">
-                    <el-radio label="是否是最终的输出结果" v-model="item.isOutput"/>
-                  </el-col>
-                </el-row>
+                <div>IMAGE</div>
               </div>
 
             </el-tab-pane>
@@ -211,10 +182,9 @@
 
 <script>
 import axios from "axios";
-import * as lodash from "lodash";
 import MessageBox from "@/components/MessageBox.vue";
 import LeaveMessageBox from "@/components/LeaveMessageBox.vue";
-import {elTransferConvert, getFileOriName} from "@/script/utils";
+import {getFileOriName} from "@/script/utils";
 
 export default {
   name: "CaseCreate",
@@ -232,13 +202,6 @@ export default {
       boxInfo: {title: "", msg: "", re_direct: ""},
       leaveBoxVisible: false,
       leaveBoxInfo: {title: "", msg: "", re_direct: ""},
-      txtRules: {
-        cname: [{required: true, message: "请输入批次名称"}],
-        fileType: [{required: true, message: "请选择需要上传的文件类型"}],
-        tabularType: [{required: false, message: "请选择任务类型"}],
-        imageType: [{required: false, message: "请选择任务类型"}]
-      },
-      relData: [],
       configForm: [],
       processOne: false,
       processThree: false,
@@ -303,7 +266,6 @@ export default {
     },
     submitLogic() {
       let ipt = JSON.parse(JSON.stringify(this.configForm))
-      ipt = elTransferConvert(ipt)
       axios.post("http://localhost:9000/cases/create/logic", ipt, {
         headers: {
           'Content-Type': 'application/json'
@@ -323,43 +285,33 @@ export default {
         }
       })
     },
-    addRelationship(item) {
-      item.relData.push({"subject": "", "object": ""})
-    },
-    selectChange(val, item, mode) {
-      item[mode] = val
-    },
     uploadSuccess(resp, file) {
       const data = resp.data
       const filename = data.pop()
       let msg = "文件上传成功"
       if (resp.code === 1) {
-        if (["xlsx", "xls"].includes(getFileOriName(filename, "suffix"))) {
-          let cols = []
-          data.forEach(item => {
-            cols.push({key: item, label: item})
+        if (getFileOriName(filename, "suffix") === "xlsx") {
+
+          let setting = []
+          data.forEach(col => {
+            const _setting = {col: col, isX: true, isCat: false, subject: col}
+            setting.push(_setting)
           })
+
           const item = {
             cid: this.cid,
             fileName: getFileOriName(filename, "name"),
-            cols: cols,
+            cols: data,
             fileType: "tabular",
-            isOutput: false,
-            leftData: data,
-            rightData: [],
-            relData: [],
-            _selectData: []
+            setting: setting,
           }
           this.configForm.push(item)
+          console.log(this.configForm)
         } else {
           const item = {
             cid: this.cid,
             fileName: getFileOriName(filename, "name"),
             fileType: "image",
-            isOutput: false,
-            leftData: [],
-            rightData: [],
-            cols: []
           }
           this.configForm.push(item)
         }
@@ -393,13 +345,6 @@ export default {
           this.boxVisible = true
           return false
         }
-      })
-    },
-    transferChange(target, direction, moveKeys, item) {
-      item.rightData = target
-      item.leftData = lodash.union(item.leftData, item.rightData)
-      target.forEach(n => {
-        item.leftData = lodash.pull(item.leftData, n)
       })
     },
     closeMsgBox() {

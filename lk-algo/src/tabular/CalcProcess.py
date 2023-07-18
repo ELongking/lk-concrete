@@ -2,13 +2,13 @@ from collections import defaultdict
 
 import joblib
 import os.path as osp
-import numpy as np
-import pandas as pd
 from hyperopt import Trials, fmin, tpe, space_eval
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
 from sklearn.model_selection import KFold
+from sklearn.utils import shuffle
 
 from .LogText import LoggerHandler
+from .PreProcess import *
 
 from typing import List, Tuple, Any
 
@@ -140,8 +140,7 @@ def hyperparams_extract(models: list,
                    space=params_space(mod, xn),
                    trials=trials,
                    algo=tpe.suggest,
-                   rstate=42,
-                   max_evals=50)
+                   max_evals=32)
         res = space_eval(params_space(mod, xn), res)
 
         if mod == 'CatBoost':
@@ -184,13 +183,11 @@ def get_variable_importance(model, name: str) -> List:
 def variable_selected(model_name: str,
                       imp: list,
                       xcols: list,
-                      relationship: list,
-                      train_x: np.array,
-                      train_y: np.array,
-                      valid_x: np.array,
-                      valid_y: np.array,
-                      test_x: np.array,
-                      test_y: np.array,
+                      relationship: dict,
+                      ori_df: pd.DataFrame,
+                      setting_config: dict,
+                      right_cols: list,
+                      cat_cols: list,
                       ado: dict,
                       params_space: callable,
                       lh: LoggerHandler) -> Tuple:
@@ -203,10 +200,7 @@ def variable_selected(model_name: str,
     lh.tab_browser_emit(text=f"特征权重从大到小的排列顺序为: {', '.join(sort_label)}", step=2, level=3)
 
     if relationship:
-        sub2obj = defaultdict(list)
-        for rel in relationship:
-            sub2obj[rel["subject"]].append(rel["object"])
-
+        sub2obj = relationship
         new_sort_zip = []
         new_label_set = set()
         for index, i_val, label, col_idx in enumerate(sort_zip):
@@ -228,16 +222,39 @@ def variable_selected(model_name: str,
     score_lst = []
     best_score = float("-inf")
     res = tuple()
+    pipeline = []
     for idx in range(len(import_col_idx)):
-        child_idx = import_col_idx[:idx]
         child_label = sort_label[:idx]
-        child_train_x = train_x[:, child_idx]
-        child_valid_x = valid_x[:, child_idx]
-        child_test_x = test_x[:, child_idx]
+        _pipeline = []
+        _temp_all_label = [*child_label, *right_cols]
+        _df = ori_df.loc[:, _temp_all_label]
+        _cat_cols = [col for col in cat_cols if col in child_label]
+
+        _df, _cats_encoder = hotpoint_first(df=_df,
+                                            encoder_name=setting_config["cats_encoder"],
+                                            cat_cols=_cat_cols,
+                                            left_cols=child_label)
+        if _cats_encoder:
+            _pipeline.append(("encoder", _cats_encoder))
+
+        if setting_config["isAnomaly"]:
+            _df = anomaly_delete(df=_df)
+
+        _df = shuffle(_df, random_state=42)
+        xdf, ydf = xy_split(df=_df)
+        xdata, ydata = xdf.values, ydf.values
+
+        xdata, scaler = data_normalization(xdata=xdata, mode=setting_config["normalize"])
+        _pipeline.append(("scaler", scaler))
+
+        xdata, pca, num = reduce_dimension(xdata)
+        _pipeline.append(("pca", pca))
+
+        train_x, train_y, valid_x, valid_y, test_x, test_y = train_test_split(xdata=xdata, ydata=ydata)
         child_model = hyperparams_extract(models=[model_name],
-                                          train_x=child_train_x,
+                                          train_x=train_x,
                                           train_y=train_y,
-                                          valid_x=child_valid_x,
+                                          valid_x=valid_x,
                                           valid_y=valid_y,
                                           ado=ado,
                                           params_space=params_space,
@@ -245,19 +262,22 @@ def variable_selected(model_name: str,
                                           is_var=True,
                                           idx=idx)
 
+        _pipeline.append((model_name, child_model))
+
         for name, algo in child_model.items():
-            algo.fit(child_train_x, train_y)
-            score = r2_score(test_y.ravel(), algo.predict(child_test_x, 1))
+            algo.fit(train_x, train_y)
+            score = r2_score(test_y.ravel(), algo.predict(test_x, 1))
             score_lst.append(score)
             if score > best_score:
                 best_score = score
                 res = (name, algo, best_score, child_label)
+                pipeline = _pipeline
 
         lh.tab_browser_emit(text=f"前{idx}个特征所构成的模型, 测试集得分为: {score_lst[-1]}", step=2, level=3)
 
     lh.tab_browser_emit(text=f"表现最好的模型所使用的特征个数为: {len(res[-1])}, 测试集得分为: {res[-2]}", step=2, level=2)
 
-    return res
+    return res, pipeline
 
 
 def save_model(model, model_name: str, opt_path: str, desc: list = None) -> None:
