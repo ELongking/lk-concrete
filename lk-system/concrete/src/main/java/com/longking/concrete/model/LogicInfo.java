@@ -14,6 +14,7 @@ public class LogicInfo {
     private String cid;
     private String fileName;
     private String fileType;
+    private String batchName;
     private boolean isTrained = false;
     private ArrayList<String> cols;
     private ArrayList<HashMap<String, Object>> setting;

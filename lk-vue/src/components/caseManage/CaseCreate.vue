@@ -159,7 +159,19 @@
               </div>
 
               <div v-if="item.fileType === 'image'">
-                <div>IMAGE</div>
+                <el-row>
+                  <el-col :span="24">
+                    <el-select v-model="item.batchName" placeholder="选择是否与哪一批同属相同数据">
+                      <el-option
+                          v-for="(item, idx) in configForm"
+                          :key="idx"
+                          v-if="item.fileType === 'image'"
+                          :label="item.fileName"
+                          :value="item.fileName"
+                      />
+                    </el-select>
+                  </el-col>
+                </el-row>
               </div>
 
             </el-tab-pane>
@@ -184,7 +196,7 @@
 import axios from "axios";
 import MessageBox from "@/components/MessageBox.vue";
 import LeaveMessageBox from "@/components/LeaveMessageBox.vue";
-import {getFileOriName} from "@/script/utils";
+import {getFileOriName, getErrorInfo} from "@/script/utils";
 
 export default {
   name: "CaseCreate",
@@ -288,43 +300,40 @@ export default {
     uploadSuccess(resp, file) {
       const data = resp.data
       const filename = data.pop()
-      let msg = "文件上传成功"
-      if (resp.code === 1) {
-        if (getFileOriName(filename, "suffix") === "xlsx") {
+      let msg = "文件上传和验证成功"
+      if (getFileOriName(filename, "suffix") === "xlsx") {
 
-          let setting = []
-          data.forEach(col => {
-            const _setting = {col: col, isX: true, isCat: false, subject: col}
-            setting.push(_setting)
-          })
+        let setting = []
+        data.forEach(col => {
+          const _setting = {col: col, isX: true, isCat: false, subject: col}
+          setting.push(_setting)
+        })
 
-          const item = {
-            cid: this.cid,
-            fileName: getFileOriName(filename, "name"),
-            cols: data,
-            fileType: "tabular",
-            setting: setting,
-          }
-          this.configForm.push(item)
-          console.log(this.configForm)
-        } else {
-          const item = {
-            cid: this.cid,
-            fileName: getFileOriName(filename, "name"),
-            fileType: "image",
-          }
-          this.configForm.push(item)
+        const item = {
+          cid: this.cid,
+          fileName: getFileOriName(filename, "name"),
+          cols: data,
+          fileType: "tabular",
+          setting: setting,
         }
+        this.configForm.push(item)
       } else {
-        msg = "上传文件失败"
+        const item = {
+          cid: this.cid,
+          fileName: getFileOriName(filename, "name"),
+          fileType: "image",
+          batchName: getFileOriName(filename, "name"),
+        }
+        this.configForm.push(item)
       }
       this.boxInfo.title = "提示"
       this.boxInfo.msg = msg
       this.boxVisible = true
     },
-    uploadFailed(err) {
+    uploadFailed(resp, file, fileList) {
+      const error = JSON.parse(resp.message)
       this.boxInfo.title = "提示"
-      this.boxInfo.msg = "文件上传失败"
+      this.boxInfo.msg = error.msg
       this.boxVisible = true
     }
     ,

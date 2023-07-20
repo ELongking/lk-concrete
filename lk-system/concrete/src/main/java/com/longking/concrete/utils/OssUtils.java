@@ -5,7 +5,6 @@ import com.aliyun.oss.model.*;
 import com.longking.concrete.common.CommonResult;
 import com.longking.concrete.config.OssConfig;
 import com.longking.concrete.dto.OssObjectDto;
-import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,10 +32,12 @@ public class OssUtils {
             cols = FileReader.excelReader(absPath);
             cols.add(file.getName());
         } else {
-            String flag = FileReader.compressReader(absPath);
+            FileReader fileReader = new FileReader();
+            String flag = fileReader.compressReader(absPath);
             cols.add(flag);
-            if (flag.equals("success")) {
-                return CommonResult.success(cols, cols.get(0));
+            cols.add(file.getName());
+            if (!flag.equals("success")) {
+                return CommonResult.fail(cols, cols.get(0));
             }
         }
 

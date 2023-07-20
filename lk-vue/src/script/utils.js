@@ -46,9 +46,16 @@ function sizeFormat(s){
     return s + " " + unit
 }
 
+
+function getErrorInfo(s){
+    const beginIndex = s.indexOf("{")
+    const endIndex = s.lastIndexOf("}")
+    return JSON.parse(s.slice(beginIndex, endIndex))
+}
+
 export {
     timeFormatConvert,
     getFileOriName,
     sizeFormat,
-
+    getErrorInfo
 }

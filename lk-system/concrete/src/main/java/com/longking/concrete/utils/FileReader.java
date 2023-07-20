@@ -41,12 +41,12 @@ public class FileReader {
         return headers;
     }
 
-    public static String compressCheck(String path) {
-
-        if (path.lastIndexOf("//") == path.length() - 2) {
+    public String compressCheck(String path) {
+        System.out.println(path);
+        if (path.lastIndexOf("//") == path.length() - 2 && !path.contains("/")) {
             boolean flag = dirBase.contains(path.substring(0, path.lastIndexOf("//")));
             return flag ? "success" : "只允许子文件夹名为image或annotation";
-        } else if (path.contains("///")) {
+        } else if (path.contains("//") && path.contains("/")) {
             return "存在二级子文件夹";
         } else {
             String suffix = path.substring(path.lastIndexOf(".") + 1).toLowerCase();
@@ -58,7 +58,7 @@ public class FileReader {
         }
     }
 
-    public static String compressReader(String path) throws IOException {
+    public String compressReader(String path) throws IOException {
         File comFile = new File(path);
         String suffix = path.substring(path.lastIndexOf(".") + 1);
         if (suffix.equalsIgnoreCase("zip")) {

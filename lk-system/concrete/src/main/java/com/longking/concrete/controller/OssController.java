@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
@@ -23,12 +24,14 @@ public class OssController {
 
     @ApiOperation(value = "上传文件")
     @RequestMapping(value = "/upload/{mode}", method = RequestMethod.POST)
-    public CommonResult<List<String>> upload(@RequestParam("file") MultipartFile file,
-                                             @PathVariable(value = "mode") String mode) throws Exception {
+    public void upload(@RequestParam("file") MultipartFile file,
+                       @PathVariable(value = "mode") String mode,
+                       HttpServletResponse response) throws Exception {
         if (file == null) {
-            return CommonResult.fail(null, "上传文件为空");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":1,\"msg\":" + "上传文件为空" + ",\"data\":" + null + "}");
         } else {
-
             String filename = file.getOriginalFilename();
             assert filename != null;
 
@@ -40,7 +43,14 @@ public class OssController {
 
             String uid = stringRedisTemplate.opsForValue().get("uid");
             String cid = stringRedisTemplate.opsForValue().get("cid");
-            return ossUtils.upload(newFile, mode, newFile.getAbsolutePath(), uid, cid);
+            CommonResult<List<String>> res = ossUtils.upload(newFile, mode, newFile.getAbsolutePath(), uid, cid);
+            if (res.getCode() == 1) {
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            }
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":1,\"msg\":\"" + res.getMsg() + "\",\"data\":\"" + res.getData() + "\"}");
         }
     }
 

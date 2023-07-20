@@ -109,7 +109,6 @@ class PredictionThread(QThread):
             algo_dict, algo_dict_optimize, params_space = filter_algo_dicts(algos=self.setting_config["algos"],
                                                                             mode=self.task_type)
             self.logger.tab_browser_emit(f"前处理步骤完毕", step=1, level=1)
-            print(xdata, ydata, sep='\n')
 
             train_x, train_y, valid_x, valid_y, test_x, test_y = train_test_split(xdata=xdata, ydata=ydata)
 
