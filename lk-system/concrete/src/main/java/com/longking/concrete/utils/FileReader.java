@@ -42,11 +42,11 @@ public class FileReader {
     }
 
     public String compressCheck(String path) {
-        System.out.println(path);
-        if (path.lastIndexOf("//") == path.length() - 2 && !path.contains("/")) {
+        boolean b = path.lastIndexOf("//") == path.length() - 2;
+        if (b && path.indexOf("/") == path.length() - 2) {
             boolean flag = dirBase.contains(path.substring(0, path.lastIndexOf("//")));
             return flag ? "success" : "只允许子文件夹名为image或annotation";
-        } else if (path.contains("//") && path.contains("/")) {
+        } else if (b && path.indexOf("/") != path.length() - 2) {
             return "存在二级子文件夹";
         } else {
             String suffix = path.substring(path.lastIndexOf(".") + 1).toLowerCase();

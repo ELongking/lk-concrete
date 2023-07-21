@@ -1,29 +1,28 @@
 package com.longking.concrete.controller;
 
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.log.Log;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.aliyun.oss.model.OSSObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.longking.concrete.analysis.ImageAna;
 import com.longking.concrete.analysis.TabularAna;
 import com.longking.concrete.common.CommonResult;
+import com.longking.concrete.dto.ImageDetailsDto;
+import com.longking.concrete.dto.TabularDetailsDto;
 import com.longking.concrete.dto.OssObjectDto;
 import com.longking.concrete.model.LogicInfo;
+import com.longking.concrete.model.MongoRepo;
 import com.longking.concrete.model.StorageInfo;
 import com.longking.concrete.service.CaseHandleService;
 import com.longking.concrete.utils.GenerateMarker;
 import com.longking.concrete.utils.OssUtils;
 import io.swagger.annotations.ApiOperation;
-import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,6 +38,8 @@ public class CaseCenterController {
     private CaseHandleService caseHandleService;
     @Autowired
     private OssUtils ossUtils;
+    @Autowired
+    private MongoRepo mongoRepo;
 
     @ApiOperation(value = "展示该用户的所有批次")
     @RequestMapping(value = "/page/{pageNum}", method = RequestMethod.GET)
@@ -49,9 +50,9 @@ public class CaseCenterController {
         return CommonResult.success(page, "success");
     }
 
-    @ApiOperation(value = "展示详细信息")
-    @RequestMapping(value = "/detail/{cid}", method = RequestMethod.GET)
-    public CommonResult<List<Object>> detailShow(@PathVariable(value = "cid") String cid) throws Exception {
+    @ApiOperation(value = "直接生成详情信息")
+    @RequestMapping(value = "/detail/generate/", method = RequestMethod.POST)
+    public void detailGenerate(@RequestParam(value = "cid") String cid) throws Exception {
         String uid = stringRedisTemplate.opsForValue().get("uid");
         OssObjectDto ossObjectDto = ossUtils.getFileObject(uid, cid, "config.json");
         OSSObject ossObject = ossObjectDto.getOssObject();
@@ -71,21 +72,45 @@ public class CaseCenterController {
 
         List<Map<String, Object>> jsonList = JSON.parseObject(jsonStr, List.class);
 
-        List<Object> res = new ArrayList<>();
         for (Map<String, Object> map : jsonList) {
             String type = (String) map.get("fileType");
             if (type.equals("tabular")) {
                 String ansName = (String) map.get("fileName");
-                ansName  = "tabular" + "/" + ansName;
+                ansName = "tabular" + "/" + ansName;
                 OssObjectDto ansOssObjectDto = ossUtils.getFileObject(uid, cid, ansName);
                 OSSObject ansObject = ansOssObjectDto.getOssObject();
-                Object anaRes = TabularAna.generateTabularDetails(map, ansObject);
-                res.add(anaRes);
+                TabularDetailsDto anaRes = TabularAna.generateTabularDetails(map, ansObject);
+                mongoRepo.saveTabularDetails(anaRes);
 
                 ansObject.close();
                 ansOssObjectDto.getOssClient().shutdown();
+            } else {
+                String ansName = (String) map.get("fileName");
+                String ansFileType = (String) map.get("fileType");
+
+                ansName = "image" + "/" + ansName;
+                OssObjectDto ansImageOssObjectDto = ossUtils.getFileObject(uid, cid, ansName);
+                OSSObject ansImageObject = ansImageOssObjectDto.getOssObject();
+
+                ImageDetailsDto anaRes = ImageAna.generateImageDetails(map, ansImageObject);
+                mongoRepo.saveImageDetails(anaRes);
+
+                ansImageObject.close();
+                ansImageOssObjectDto.getOssClient().shutdown();
             }
         }
+
+    }
+
+
+    @ApiOperation(value = "展示详细信息")
+    @RequestMapping(value = "/detail/{cid}", method = RequestMethod.GET)
+    public CommonResult<List<Object>> detailShow(@PathVariable(value = "cid") String cid) {
+        List<Object> res = new ArrayList<>();
+        List<TabularDetailsDto> tdd = mongoRepo.findTabularDetails(cid);
+        List<ImageDetailsDto> idd = mongoRepo.findImageDetails(cid);
+        res.addAll(tdd);
+        res.addAll(idd);
         return CommonResult.success(res, "success");
     }
 

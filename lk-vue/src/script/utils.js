@@ -46,16 +46,17 @@ function sizeFormat(s){
     return s + " " + unit
 }
 
-
-function getErrorInfo(s){
-    const beginIndex = s.indexOf("{")
-    const endIndex = s.lastIndexOf("}")
-    return JSON.parse(s.slice(beginIndex, endIndex))
+function convertToStringArray(str) {
+    str = str.slice(1, -1);
+    return str.split(',').map(function (element) {
+        return element.trim().replace(/^"(.*)"$/, '$1');
+    })
 }
+
 
 export {
     timeFormatConvert,
     getFileOriName,
     sizeFormat,
-    getErrorInfo
+    convertToStringArray
 }

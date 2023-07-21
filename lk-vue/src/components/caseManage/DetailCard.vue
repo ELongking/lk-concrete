@@ -119,6 +119,7 @@
 
         <el-tabs :tab-position="'left'" @tab-change="dataTabChange">
           <el-tab-pane v-for="(item, index) in jsonInfo" :label="item.fileName">
+
             <div class="dataDetails" v-if="item.fileType === 'tabular'">
               <el-row>
                 <el-col :span="6">
@@ -136,10 +137,11 @@
               </el-row>
 
               <el-table :data="reFormatMs(item)" style="width: 100%;">
-                <el-table-column prop="name" label="列名" minWidth="24%"/>
-                <el-table-column prop="mean" label="平均值" minWidth="24%"/>
-                <el-table-column prop="std" label="方差" minWidth="24%"/>
-                <el-table-column prop="cats" label="种类" minWidth="24%"/>
+                <el-table-column prop="name" label="列名" minWidth="20%"/>
+                <el-table-column prop="mean" label="平均值" minWidth="20%"/>
+                <el-table-column prop="std" label="方差" minWidth="20%"/>
+                <el-table-column prop="cats" label="种类" minWidth="20%"/>
+                <el-table-column prop="subs" label="主体组分" minWidth="20%"/>
               </el-table>
 
               <el-button-group>
@@ -154,6 +156,39 @@
                    justify-content: center;
                    margin: auto;"
               />
+
+            </div>
+
+            <div v-if="item.fileType === 'image'">
+              <el-row>
+                <el-col :span="6">
+                  <el-statistic title="文件大小" :value="sizeFormat(item.fileSize)"></el-statistic>
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="总图片数" :value="item.number"></el-statistic>
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="总类别数" :value="item.classes"></el-statistic>
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="图片平均大小" :value="item.meanSize"></el-statistic>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="6">
+                  <el-statistic title="图片最大分辨率" :value="item.resolution"></el-statistic>
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="最大分辨率图片宽度" :value="item.maxWidth"></el-statistic>
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="最大分辨率图片高度" :value="item.maxHeight"></el-statistic>
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="图片平均大小" :value="item.meanSize"></el-statistic>
+                </el-col>
+              </el-row>
 
             </div>
           </el-tab-pane>
@@ -204,7 +239,7 @@ export default {
   beforeRouteLeave(to, from, next) {
     axios.post("http://localhost:9000/details/update/" + this.jsonInfo.cid).then(resp => {
       const code = resp.data.code
-      if (code === 1){
+      if (code === 1) {
         next()
       } else {
         next(false)
@@ -266,7 +301,7 @@ export default {
   width: 100%;
 }
 
-.el-icon{
+.el-icon {
   font-size: 1.2em;
 }
 

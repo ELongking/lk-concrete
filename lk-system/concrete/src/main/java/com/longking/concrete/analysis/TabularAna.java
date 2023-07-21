@@ -6,7 +6,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson2.util.TypeUtils;
 import com.aliyun.oss.model.OSSObject;
-import com.longking.concrete.model.TabularDetails;
+import com.longking.concrete.dto.TabularDetailsDto;
 import com.longking.concrete.utils.MathUtils;
 
 import java.io.InputStream;
@@ -93,9 +93,9 @@ public class TabularAna {
         return finalResult;
     }
 
-    public static TabularDetails generateTabularDetails(Map<String, Object> jsonMap, OSSObject ossObject) throws Exception {
+    public static TabularDetailsDto generateTabularDetails(Map<String, Object> jsonMap, OSSObject ossObject) throws Exception {
         String fileName = (String) jsonMap.get("fileName");
-        TabularDetails tabularDetails = new TabularDetails();
+        TabularDetailsDto tabularDetails = new TabularDetailsDto();
         long fileSize = ossObject.getObjectMetadata().getContentLength();
 
         List<List<Double>> matrix = generateExcelData(ossObject);
@@ -108,18 +108,26 @@ public class TabularAna {
 
         List<HashMap<String, Object>> setting = JSON.parseObject(
                 JSON.toJSONString(jsonMap.get("setting")),
-                new TypeReference<List<HashMap<String, Object>>>(){}
+                new TypeReference<List<HashMap<String, Object>>>() {
+                }
         );
 
         List<String> cols = new ArrayList<>();
         List<String> xCols = new ArrayList<>();
         List<String> yCols = new ArrayList<>();
+        List<String> subs = new ArrayList<>();
 
         for (Map<String, Object> element : setting) {
             if ((boolean) element.get("isX")) {
                 xCols.add((String) element.get("col"));
             } else {
                 yCols.add((String) element.get("col"));
+            }
+
+            if (element.get("col").equals(element.get("subject"))){
+                subs.add((String) element.get("subject"));
+            } else {
+                subs.add("无");
             }
         }
 
@@ -129,12 +137,14 @@ public class TabularAna {
         tabularDetails.setCols(cols);
         tabularDetails.setXCols(xCols);
         tabularDetails.setYCols(yCols);
+        tabularDetails.setSubs(subs);
 
         tabularDetails.setFileName(fileName);
         tabularDetails.setMean(mean);
         tabularDetails.setStd(std);
 
         tabularDetails.setFileSize(fileSize);
+
         return tabularDetails;
     }
 

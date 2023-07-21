@@ -5,8 +5,8 @@ spring:
     password: xxx
     url: xxx
   redis:
-    host: 127.0.0.1
-    port: 6379
+    host: xxx
+    port: xxx
     password: xxx
     database: 0
     lettuce:
@@ -16,7 +16,11 @@ spring:
         min-idle: 8
   servlet:
     multipart:
-      max-file-size: 1000MB
+      max-file-size: 2GB
+      max-request-size: 2GB
+  data:
+    mongodb:
+      uri: xxx
 
 server:
   port: 9000

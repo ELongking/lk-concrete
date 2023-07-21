@@ -129,6 +129,7 @@ public class OssUtils {
 
         OSSClient client = new OSSClient(endPoint, keyId, keySecret);
         String fileUrl = uid + "/" + cid + "/" + name;
+        System.out.println(fileUrl);
         OSSObject ossObject = client.getObject(bucketName, fileUrl);
         return new OssObjectDto(client, ossObject);
     }

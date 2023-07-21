@@ -15,7 +15,8 @@
     "echarts": "^5.4.2",
     "vuex": "^4.1.0",
     "element-plus": "^2.3.6",
-    "jquery": "^3.7.0"
+    "jquery": "^3.7.0",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

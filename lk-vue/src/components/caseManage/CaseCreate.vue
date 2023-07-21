@@ -196,7 +196,7 @@
 import axios from "axios";
 import MessageBox from "@/components/MessageBox.vue";
 import LeaveMessageBox from "@/components/LeaveMessageBox.vue";
-import {getFileOriName, getErrorInfo} from "@/script/utils";
+import {getFileOriName, convertToStringArray} from "@/script/utils";
 
 export default {
   name: "CaseCreate",
@@ -287,9 +287,10 @@ export default {
         if (res.code === 1) {
           this.boxInfo.title = "提示"
           this.boxInfo.re_direct = "/manage"
-          this.boxInfo.msg = "逻辑关系提交成功"
+          this.boxInfo.msg = "逻辑关系提交成功, 点击返回主页"
           this.boxVisible = true
           this.processThree = true
+          axios.post("http://localhost:9000/cases/detail/generate/", {cid: this.cid})
         } else {
           this.boxInfo.title = "提示"
           this.boxInfo.msg = res.msg
@@ -298,7 +299,7 @@ export default {
       })
     },
     uploadSuccess(resp, file) {
-      const data = resp.data
+      const data = convertToStringArray(resp.data)
       const filename = data.pop()
       let msg = "文件上传和验证成功"
       if (getFileOriName(filename, "suffix") === "xlsx") {
