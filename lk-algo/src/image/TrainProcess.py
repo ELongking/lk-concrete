@@ -2,12 +2,9 @@ import torch.nn as nn
 
 
 class ClsTrainProcess:
-    def __init__(self, model: nn.Module):
+    def __init__(self, model: nn.Module, cfg: dict) -> None:
         self.model = model
-
-
-    def image_transform(self):
-        pass
+        self.cfg = cfg
 
     def run(self):
         pass

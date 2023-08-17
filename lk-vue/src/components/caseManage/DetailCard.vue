@@ -159,7 +159,7 @@
 
             </div>
 
-            <div v-if="item.fileType === 'image'">
+            <div class="dataDetails" v-if="item.fileType === 'image'">
               <el-row>
                 <el-col :span="6">
                   <el-statistic title="文件大小" :value="sizeFormat(item.fileSize)"></el-statistic>
@@ -171,7 +171,7 @@
                   <el-statistic title="总类别数" :value="item.classes"></el-statistic>
                 </el-col>
                 <el-col :span="6">
-                  <el-statistic title="图片平均大小" :value="item.meanSize"></el-statistic>
+                  <el-statistic title="归属关系" :value="item.batchId"></el-statistic>
                 </el-col>
               </el-row>
 
@@ -189,6 +189,35 @@
                   <el-statistic title="图片平均大小" :value="item.meanSize"></el-statistic>
                 </el-col>
               </el-row>
+
+              <div class="imageShow">
+                <el-row>
+                  <el-col v-for="img_idx of 3" :span="8">
+                    <el-image
+                        fit="cover"
+                        :preview-src-list="item.exampleImage"
+                        :src="item.exampleImage[img_idx]"/>
+                  </el-col>
+                </el-row>
+                <el-row>
+                  <el-col v-for="img_idx of 3" :span="8">
+                    <el-image
+                        fit="cover"
+                        :preview-src-list="item.exampleImage"
+                        :src="item.exampleImage[img_idx + 3]"/>
+                  </el-col>
+                </el-row>
+              </div>
+
+
+              <div :id="'chart-' + index"
+                   style="
+                   height: 80vh;
+                   width: 70vw;
+                   display: flex;
+                   justify-content: center;
+                   margin: auto;"
+              />
 
             </div>
           </el-tab-pane>
@@ -284,7 +313,9 @@ export default {
       this.$emit("toDetailVisible")
     },
     dataTabChange(tabName) {
-      this.chart.dispose()
+      if (this.chart) {
+        this.chart.dispose()
+      }
       const chartContainerId = 'chart-' + tabName;
       this.chart = echarts.init(document.getElementById(chartContainerId));
     }

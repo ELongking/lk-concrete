@@ -18,4 +18,7 @@ public class LogicInfo {
     private boolean isTrained = false;
     private ArrayList<String> cols;
     private ArrayList<HashMap<String, Object>> setting;
+    private ArrayList<String> exampleNames;
+    private Integer number;
+
 }

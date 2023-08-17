@@ -7,9 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -18,6 +16,8 @@ public class FileReader {
     private static final List<String> dirBase = new ArrayList<>();
     private static final List<String> imageFormatBase = new ArrayList<>();
     private static final List<String> annoFormatBase = new ArrayList<>();
+    private List<String> fileNames = new ArrayList<>();
+    private int number;
 
     public FileReader() {
         dirBase.add("image");
@@ -51,14 +51,21 @@ public class FileReader {
         } else {
             String suffix = path.substring(path.lastIndexOf(".") + 1).toLowerCase();
             if (path.indexOf("image") == 0) {
-                return imageFormatBase.contains(suffix) ? "success" : "图片文件夹内存在格式为 --- " + suffix + " --- 的文件";
+                boolean flag = imageFormatBase.contains(suffix);
+                if (flag) {
+                    fileNames.add(path.substring(path.lastIndexOf("/") + 1));
+                    return "success";
+                } else {
+                    return "图片文件夹内存在格式为 --- " + suffix + " --- 的文件";
+                }
             } else {
                 return annoFormatBase.contains(suffix) ? "success" : "标注文件夹内存在格式为 --- " + suffix + " --- 的文件";
             }
         }
     }
 
-    public String compressReader(String path) throws IOException {
+    public List<String> compressReader(String path) throws IOException {
+
         File comFile = new File(path);
         String suffix = path.substring(path.lastIndexOf(".") + 1);
         if (suffix.equalsIgnoreCase("zip")) {
@@ -72,13 +79,28 @@ public class FileReader {
                     }
                     String flag = compressCheck(name);
                     if (!flag.equals("success")) {
-                        return flag;
+                        List<String> res = new ArrayList<>(7);
+                        res.set(0, flag);
+                        return res;
                     }
                 }
             }
         }
-        return "success";
+        int length = fileNames.size();
+        number = length;
+        List<String> expList = new ArrayList<>(Collections.nCopies(7, null));
+        Random random = new Random();
+        for (int i = 0; i < 6; i++) {
+            int randomIndex = random.nextInt(length);
+            String randomElement = fileNames.get(randomIndex);
+            expList.set(i + 1, randomElement);
+            fileNames.remove(randomIndex);
+        }
+        expList.set(0, "success");
+        return expList;
     }
 
-
+    public int getImagesNumber() {
+        return this.number;
+    }
 }

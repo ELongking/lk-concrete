@@ -108,7 +108,10 @@ class ProcessWindow(QMainWindow):
         for _ in range(aside_tree.item_num[1]):
             index += 1
             i_stacked_widgets = [
-                IPreProcessWidget(), IAlgoSelectWidget(), ISettingWidget(), IStartExportWidget(),
+                IPreProcessWidget(index=index),
+                IAlgoSelectWidget(index=index, task_type=task_type),
+                ISettingWidget(index=index),
+                IStartExportWidget(index=index, task_type=task_type, case_path=image_case_path),
             ]
             for i in i_stacked_widgets:
                 self.train_main_widget.addWidget(i)

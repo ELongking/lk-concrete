@@ -11,6 +11,27 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import *
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2, alpha=None):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def forward(self, ipt, target):
+        target = F.one_hot(target, num_classes=ipt.size(-1))
+        logpt = F.log_softmax(ipt, dim=-1)
+        pt = torch.exp(logpt)
+        focal_loss = -self.alpha * (1 - pt) ** self.gamma * logpt
+        loss = torch.sum(target * focal_loss, dim=-1)
+        mean_loss = torch.mean(loss)
+
+        return mean_loss
+
 
 class MixUp:
     def __init__(self, alpha=1.0):
@@ -37,7 +58,7 @@ class MixUp:
 
 
 class CutMix:
-    def __init__(self, alpha=1.0):
+    def __init__(self, alpha=0.6):
         self.alpha = alpha
 
     def __call__(self, sample):
@@ -46,18 +67,15 @@ class CutMix:
         if batch_size < 2:
             return image, label
 
-        # 随机选择另一个样本
         index = torch.randperm(batch_size)
         index = index[:batch_size // 2]
         image2 = image[index]
         label2 = label[index]
 
-        # 计算CutMix参数
         lam = np.random.beta(self.alpha, self.alpha)
         lam = max(lam, 1 - lam)
         bbx1, bby1, bbx2, bby2 = self.rand_bbox(image.size(), lam)
 
-        # CutMix图像和标签
         mixed_image = image.clone()
         mixed_image[:, :, bbx1:bbx2, bby1:bby2] = image2[:, :, bbx1:bbx2, bby1:bby2]
         mixed_label = lam * label + (1 - lam) * label2
@@ -136,4 +154,10 @@ class ImageAugMethod:
         }
 
     def get_transform_method(self, aug_params: dict) -> Compose:
-        return Compose
+        compose = [
+            self.base_aug["mean"],
+            self.base_aug["resize"],
+        ]
+        for key, val in aug_params.items():
+            compose.append(self.advanced_aug[key])
+            pass

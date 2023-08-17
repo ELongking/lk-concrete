@@ -11,10 +11,11 @@ import com.longking.concrete.common.CommonResult;
 import com.longking.concrete.dto.ImageDetailsDto;
 import com.longking.concrete.dto.TabularDetailsDto;
 import com.longking.concrete.dto.OssObjectDto;
+import com.longking.concrete.model.CaseTypes;
 import com.longking.concrete.model.LogicInfo;
-import com.longking.concrete.model.MongoRepo;
 import com.longking.concrete.model.StorageInfo;
 import com.longking.concrete.service.CaseHandleService;
+import com.longking.concrete.service.MongoService;
 import com.longking.concrete.utils.GenerateMarker;
 import com.longking.concrete.utils.OssUtils;
 import io.swagger.annotations.ApiOperation;
@@ -24,10 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/cases")
@@ -39,7 +37,7 @@ public class CaseCenterController {
     @Autowired
     private OssUtils ossUtils;
     @Autowired
-    private MongoRepo mongoRepo;
+    private MongoService mongoService;
 
     @ApiOperation(value = "展示该用户的所有批次")
     @RequestMapping(value = "/page/{pageNum}", method = RequestMethod.GET)
@@ -71,29 +69,30 @@ public class CaseCenterController {
         ossObjectDto.getOssClient().shutdown();
 
         List<Map<String, Object>> jsonList = JSON.parseObject(jsonStr, List.class);
-
+        HashMap<String, Integer> imageBatchMap = new HashMap<>();
         for (Map<String, Object> map : jsonList) {
             String type = (String) map.get("fileType");
+            String ansName = (String) map.get("fileName");
             if (type.equals("tabular")) {
-                String ansName = (String) map.get("fileName");
                 ansName = "tabular" + "/" + ansName;
                 OssObjectDto ansOssObjectDto = ossUtils.getFileObject(uid, cid, ansName);
                 OSSObject ansObject = ansOssObjectDto.getOssObject();
                 TabularDetailsDto anaRes = TabularAna.generateTabularDetails(map, ansObject);
-                mongoRepo.saveTabularDetails(anaRes);
+                mongoService.saveTabularDetails(anaRes);
 
                 ansObject.close();
                 ansOssObjectDto.getOssClient().shutdown();
             } else {
-                String ansName = (String) map.get("fileName");
-                String ansFileType = (String) map.get("fileType");
-
+                if (!imageBatchMap.containsKey(ansName)) {
+                    imageBatchMap.put(ansName, imageBatchMap.size() + 1);
+                }
                 ansName = "image" + "/" + ansName;
                 OssObjectDto ansImageOssObjectDto = ossUtils.getFileObject(uid, cid, ansName);
                 OSSObject ansImageObject = ansImageOssObjectDto.getOssObject();
 
                 ImageDetailsDto anaRes = ImageAna.generateImageDetails(map, ansImageObject);
-                mongoRepo.saveImageDetails(anaRes);
+                anaRes.setBatchId(imageBatchMap.get(ansName));
+                mongoService.saveImageDetails(anaRes);
 
                 ansImageObject.close();
                 ansImageOssObjectDto.getOssClient().shutdown();
@@ -106,11 +105,33 @@ public class CaseCenterController {
     @ApiOperation(value = "展示详细信息")
     @RequestMapping(value = "/detail/{cid}", method = RequestMethod.GET)
     public CommonResult<List<Object>> detailShow(@PathVariable(value = "cid") String cid) {
+        List<CaseTypes> types = caseHandleService.getCaseTypes(cid);
+        assert types.size() == 1;
+        CaseTypes type = types.get(0);
         List<Object> res = new ArrayList<>();
-        List<TabularDetailsDto> tdd = mongoRepo.findTabularDetails(cid);
-        List<ImageDetailsDto> idd = mongoRepo.findImageDetails(cid);
-        res.addAll(tdd);
-        res.addAll(idd);
+
+        while (true){
+            if (!type.getTabularType().isEmpty()){
+                List<TabularDetailsDto> tdd = mongoService.findTabularDetails(cid);
+                if (!tdd.isEmpty()){
+                    res.addAll(tdd);
+                }
+            } else {
+                break;
+            }
+        }
+
+        while (true){
+            if (!type.getImageType().isEmpty()){
+                List<ImageDetailsDto> idd = mongoService.findImageDetails(cid);
+                if (!idd.isEmpty()){
+                    res.addAll(idd);
+                }
+            } else {
+                break;
+            }
+        }
+
         return CommonResult.success(res, "success");
     }
 
@@ -135,6 +156,7 @@ public class CaseCenterController {
 
         if (flag > 0) {
             ossUtils.deleteDirectory(uid, cid);
+            mongoService.deleteDetails(cid);
             return CommonResult.success(null, "success");
         } else {
             return CommonResult.fail(null, "删除失败, 请重试");
@@ -181,6 +203,7 @@ public class CaseCenterController {
             String uid = stringRedisTemplate.opsForValue().get("uid");
             String cid = stringRedisTemplate.opsForValue().get("cid");
             String jsonStr = JSON.toJSONString(logicInfos);
+            System.out.println("--------->   " + jsonStr);
             return ossUtils.uploadJson(jsonStr, uid, cid);
         }
     }

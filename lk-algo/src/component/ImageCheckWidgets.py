@@ -17,6 +17,15 @@ def reformat_tool_info(f: list) -> str:
     return res
 
 
+def process_component(component):
+    res = ""
+    if isinstance(component, QLineEdit):
+        res = component.text()
+    if isinstance(component, QRadioButton):
+        res = component.isChecked()
+    return res
+
+
 class IPreProcessWidget(QWidget):
     def __init__(self, index: int):
         super().__init__()
@@ -26,58 +35,105 @@ class IPreProcessWidget(QWidget):
 
     def _init_widget(self):
         v_layout = QVBoxLayout()
+        v_layout.addWidget(QLabel("数据增强方法"))
 
-        h_layout_1 = QHBoxLayout()
-        default_label = QLabel("缺省值填充 -> ")
-        h_layout_1.addWidget(default_label)
-        self.default_btn_group = QButtonGroup(self)
-        for index, title in enumerate(["填充0", "填充均值", "删除整行"]):
-            ans_radio_btn = QRadioButton(title, self)
-            self.default_btn_group.addButton(ans_radio_btn)
-            h_layout_1.addWidget(ans_radio_btn)
-        self.default_btn_group.buttons()[0].setChecked(True)
+        v_layout_1 = QVBoxLayout()
+        h_layout_v1_1 = QHBoxLayout()
+        mean_aug_label = QLabel("Mean & Std")
+        mean_aug_check = QCheckBox()
+        mean_aug_check.setChecked(True)
+        mean_aug_check.setEnabled(False)
+        mean_aug_text = QLineEdit("mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]")
+        mean_aug_text.setEnabled(False)
+        h_layout_v1_1.addWidget(mean_aug_check)
+        h_layout_v1_1.addWidget(mean_aug_label)
+        h_layout_v1_1.addWidget(mean_aug_text)
+        v_layout_1.addLayout(h_layout_v1_1)
 
-        h_layout_2 = QHBoxLayout()
-        normal_label = QLabel("标准化方法 -> ")
-        h_layout_2.addWidget(normal_label)
-        self.normal_btn_group = QButtonGroup(self)
-        for index, title in enumerate(["0~1分布", "-1~1分布", "正态分布"]):
-            ans_radio_btn = QRadioButton(title, self)
-            self.normal_btn_group.addButton(ans_radio_btn)
-            h_layout_2.addWidget(ans_radio_btn)
-        self.normal_btn_group.buttons()[0].setChecked(True)
+        h_layout_v1_2 = QHBoxLayout()
+        resize_aug_label = QLabel("Resize")
+        resize_aug_check = QCheckBox()
+        resize_aug_check.setChecked(True)
+        resize_aug_check.setEnabled(False)
+        resize_aug_text = QLineEdit("256")
+        resize_aug_text.setEnabled(False)
+        h_layout_v1_2.addWidget(resize_aug_check)
+        h_layout_v1_2.addWidget(resize_aug_label)
+        h_layout_v1_2.addWidget(resize_aug_text)
+        v_layout_1.addLayout(h_layout_v1_2)
 
-        h_layout_3 = QHBoxLayout()
-        hotpoint_label = QLabel("类别编码方法 -> ")
-        h_layout_3.addWidget(hotpoint_label)
-        _all_encoders = ["CatBoost", "Helmert", "JamesStein", "LeaveOneOut",
-                         "MEstimate", "Ordinal", "Sum", "Target",
-                         "WOE"]
-        self.encoder_method_combox = QComboBox()
-        self.encoder_method_combox.addItems(_all_encoders)
-        h_layout_3.addWidget(self.encoder_method_combox)
+        h_layout_v1_3 = QHBoxLayout()
+        crop_aug_label = QLabel("RandomCrop")
+        crop_aug_check = QCheckBox()
+        self.crop_aug_text = QLineEdit("224")
+        self.crop_aug_text.setPlaceholderText("Cannot larger than 256")
+        h_layout_v1_3.addWidget(crop_aug_check)
+        h_layout_v1_3.addWidget(crop_aug_label)
+        h_layout_v1_3.addWidget(self.crop_aug_text)
+        v_layout_1.addLayout(h_layout_v1_3)
 
-        h_layout_4 = QHBoxLayout()
-        self.ano_check_btn = QRadioButton("异常值舍弃")
-        h_layout_4.addWidget(self.ano_check_btn)
+        h_layout_v1_4 = QHBoxLayout()
+        rana_aug_label = QLabel("RandomAug")
+        rana_aug_check = QCheckBox()
+        self.rana_aug_text = QLineEdit("2,6")
+        self.rana_aug_text.setPlaceholderText("Format: n(the number of transforms),m(the number of sub-strategies")
+        h_layout_v1_4.addWidget(rana_aug_check)
+        h_layout_v1_4.addWidget(rana_aug_label)
+        h_layout_v1_4.addWidget(self.rana_aug_text)
+        v_layout_1.addLayout(h_layout_v1_4)
 
-        v_layout.addLayout(h_layout_1)
-        v_layout.addLayout(h_layout_2)
-        v_layout.addLayout(h_layout_3)
-        v_layout.addLayout(h_layout_4)
-        v_layout.setSpacing(30)
+        h_layout_v1_5 = QHBoxLayout()
+        cutmix_aug_label = QLabel("CutMix")
+        cutmix_aug_check = QCheckBox()
+        self.cutmix_aug_text = QLineEdit("0.6")
+        self.cutmix_aug_text.setPlaceholderText("0-1, means mix-part ratio to ori image")
+        h_layout_v1_5.addWidget(cutmix_aug_check)
+        h_layout_v1_5.addWidget(cutmix_aug_label)
+        h_layout_v1_5.addWidget(self.cutmix_aug_text)
+        v_layout_1.addLayout(h_layout_v1_5)
 
+        h_layout_v1_6 = QHBoxLayout()
+        mixup_aug_label = QLabel("MixUp")
+        mixup_aug_check = QCheckBox()
+        self.mixup_aug_text = QLineEdit("0.6")
+        self.mixup_aug_text.setPlaceholderText("0-1, means mix-part ratio to ori image")
+        h_layout_v1_6.addWidget(mixup_aug_check)
+        h_layout_v1_6.addWidget(mixup_aug_label)
+        h_layout_v1_6.addWidget(self.mixup_aug_text)
+        v_layout_1.addLayout(h_layout_v1_6)
+
+        self.aug_check_group = QButtonGroup()
+        self.aug_check_group.addButton(mean_aug_check)
+        self.aug_check_group.addButton(resize_aug_check)
+        self.aug_check_group.addButton(crop_aug_check)
+        self.aug_check_group.addButton(rana_aug_check)
+        self.aug_check_group.addButton(cutmix_aug_check)
+        self.aug_check_group.addButton(mixup_aug_check)
+        self.aug_check_group.setExclusive(False)
+
+        v_layout.addLayout(v_layout_1)
         self.setLayout(v_layout)
 
     def export(self) -> dict:
-        _default_value_convert = {"填充0": "zero", "填充均值": "mean", "删除整行": "delete"}
-        _normal_method_convert = {"0~1分布": "minmax", "-1~1分布": "maxabs", "正态分布": "standard"}
-        return {
-            "default": _default_value_convert[self.default_btn_group.checkedButton().text()],
-            "normalize": _normal_method_convert[self.normal_btn_group.checkedButton().text()],
-            "cats_encoder": self.encoder_method_combox.currentText(),
-            "isAnomaly": self.ano_check_btn.isChecked()
-        }
+        res = {"aug": []}
+        for idx, btn in enumerate(self.aug_check_group.buttons()):
+            if not btn.isChecked():
+                continue
+
+            if idx == 0 and idx == 1:
+                pass
+            elif idx == 2:
+                res["aug"].append(["crop", self.crop_aug_text.text()])
+            elif idx == 3:
+                res["aug"].append(["randaug", self.rana_aug_text.text()])
+            elif idx == 4:
+                res["aug"].append(["cutmix", self.cutmix_aug_text.text()])
+            elif idx == 5:
+                res["aug"].append(["mixup", self.mixup_aug_text.text()])
+            else:
+                raise ValueError(f"No Value can be {idx}")
+
+        return res
 
 
 class IAlgoSelectWidget(QWidget):
@@ -172,14 +228,19 @@ class IAlgoSelectWidget(QWidget):
         else:
             all_algo = seg_algo
 
-        algo_radio_group = QButtonGroup()
-        for algo in all_algo:
+        self.all_algo = all_algo
+        self.algo_radio_group = QButtonGroup()
+        self.algo_size_comboxes = []
+        for idx, algo in enumerate(all_algo):
             ans_h_layout = QHBoxLayout()
             ans_radio_btn = QRadioButton(algo["name"])
-            algo_radio_group.addButton(ans_radio_btn)
+            if idx == 0:
+                ans_radio_btn.setChecked(True)
+            self.algo_radio_group.addButton(ans_radio_btn)
             ans_label = QLabel("模型大小", self)
             ans_size_combox = QComboBox()
             ans_size_combox.addItems(algo["size"])
+            self.algo_size_comboxes.append(ans_size_combox)
             ans_tool_label = QLabel(self)
             ans_tool_label.setPixmap(QPixmap("../assets/info.png").scaledToWidth(30))
             ans_tool_label.setToolTip(reformat_tool_info(f=algo["info"]))
@@ -188,78 +249,147 @@ class IAlgoSelectWidget(QWidget):
             ans_h_layout.addWidget(ans_size_combox)
             ans_h_layout.addWidget(ans_tool_label)
 
-
     def export(self) -> dict:
-        checked_btns = self.algo_btn_group.buttons()
-        return {"algos": [button.text() for button in checked_btns if button.isChecked()]}
+        for idx, btn in enumerate(self.algo_radio_group.buttons()):
+            if btn.isChecked():
+                return {"algos": [self.all_algo[idx]["name"], self.algo_size_comboxes[idx].currentText()]}
 
 
-class TSettingWidget(QWidget):
+class ISettingWidget(QWidget):
     def __init__(self, index: int):
         super().__init__()
         self.index = index
-        self.name = "TSettingWidget"
+        self.name = "ISettingWidget"
         self._init_widget()
 
     def _init_widget(self):
         v_layout = QVBoxLayout()
-        grid_layout = QGridLayout()
-        self.setting_btn_group = QButtonGroup(self)
-        self.setting_btn_group.setExclusive(False)
-        self.pmml_box = QComboBox(self)
-        self.pmml_box.addItem("1. 初步筛选结果")
-        all_setting = ["算法参数优化", "特征值二次选择", "引入AutoML方法"]
 
-        for index, title in enumerate(all_setting):
-            ans_check_btn = QCheckBox(title)
-            ans_check_btn.toggled.connect(lambda checked, idx=index: self.button_state_changed(idx))
-            self.setting_btn_group.addButton(ans_check_btn)
-            grid_layout.addWidget(ans_check_btn, index // 3, index % 3)
+        v_layout_1 = QVBoxLayout()
+        h_layout_v1_1 = QHBoxLayout()
+        opti_label = QLabel("优化器:")
+        self.opti_select_combox = QComboBox()
+        self.opti_select_combox.addItems(["SGD", "Adam", "AdamW"])
+        self.opti_select_combox.currentIndexChanged.connect(self._opti_changed)
+        h_layout_v1_1.addWidget(opti_label)
+        h_layout_v1_1.addWidget(self.opti_select_combox)
+        self._opti_setting_layout = QHBoxLayout()
+        v_layout_1.addLayout(h_layout_v1_1)
+        v_layout_1.addLayout(self._opti_setting_layout)
 
-        grid_layout.addWidget(QLabel("推理模式: "), 1, 0)
-        grid_layout.addWidget(self.pmml_box, 1, 1, 1, 2)
+        v_layout_2 = QVBoxLayout()
+        h_layout_v2_1 = QHBoxLayout()
+        loss_label = QLabel("损失函数")
+        self.loss_select_combox = QComboBox()
+        self.loss_select_combox.addItems(["CrossEntropy",
+                                          "LabelSmoothingCrossEntropy",
+                                          "Focal", ])
+        self.loss_select_combox.currentIndexChanged.connect(self._loss_changed)
+        h_layout_v2_1.addWidget(opti_label)
+        h_layout_v2_1.addWidget(self.opti_select_combox)
+        self._loss_setting_layout = QHBoxLayout()
+        v_layout_2.addLayout(h_layout_v2_1)
+        v_layout_2.addLayout(self._loss_setting_layout)
 
-        v_layout.addLayout(grid_layout)
+        v_layout.addLayout(v_layout_1)
+        v_layout.addLayout(v_layout_2)
         self.setLayout(v_layout)
 
-    def button_state_changed(self, idx) -> None:
-        btn = self.setting_btn_group.buttons()[idx]
-        if idx == 2:
+    def _opti_changed(self, index):
+        while self._opti_setting_layout.count():
+            child = self._opti_setting_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        if index == 0:
+            learning_rate_label = QLabel("学习率")
+            learning_rate_text = QLineEdit("1e-3")
+            momentum_label = QLabel("动量")
+            momentum_text = QLineEdit("0.95")
+
+            self._opti_setting_layout.addWidget(learning_rate_label)
+            self._opti_setting_layout.addWidget(learning_rate_text)
+            self._opti_setting_layout.addWidget(momentum_label)
+            self._opti_setting_layout.addWidget(momentum_text)
+
+        elif index == 1:
+            learning_rate_label = QLabel("学习率")
+            learning_rate_text = QLineEdit("1e-3")
+            beta1_label = QLabel("一阶矩估计指数衰减率")
+            beta1_text = QLineEdit("0.9")
+            beta2_label = QLabel("二阶矩估计指数衰减率")
+            beta2_text = QLineEdit("0.999")
+
+            self._opti_setting_layout.addWidget(learning_rate_label)
+            self._opti_setting_layout.addWidget(learning_rate_text)
+            self._opti_setting_layout.addWidget(beta1_label)
+            self._opti_setting_layout.addWidget(beta1_text)
+            self._opti_setting_layout.addWidget(beta2_label)
+            self._opti_setting_layout.addWidget(beta2_text)
+
+        elif index == 2:
+            learning_rate_label = QLabel("学习率")
+            learning_rate_text = QLineEdit("1e-3")
+            beta1_label = QLabel("一阶矩估计指数衰减率")
+            beta1_text = QLineEdit("0.9")
+            beta2_label = QLabel("二阶矩估计指数衰减率")
+            beta2_text = QLineEdit("0.999")
+            weight_decay_label = QLabel("权重衰减")
+            weight_decay_text = QLineEdit("0.1")
+
+            self._opti_setting_layout.addWidget(learning_rate_label)
+            self._opti_setting_layout.addWidget(learning_rate_text)
+            self._opti_setting_layout.addWidget(beta1_label)
+            self._opti_setting_layout.addWidget(beta1_text)
+            self._opti_setting_layout.addWidget(beta2_label)
+            self._opti_setting_layout.addWidget(beta2_text)
+            self._opti_setting_layout.addWidget(weight_decay_label)
+            self._opti_setting_layout.addWidget(weight_decay_text)
+
+    def _loss_changed(self, index):
+        while self._loss_setting_layout.count():
+            child = self._loss_setting_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        if index == 0:
             pass
-        elif idx == 1:
-            text = "3. 特征选择后结果(特征数会比之前少, 请注意查看)"
-            if btn.isChecked():
-                self.pmml_box.addItem(text)
-            else:
-                if self.pmml_box.findText(text) == -1:
-                    pass
-                else:
-                    self.pmml_box.removeItem(self.pmml_box.findText(text))
-        else:
-            text = "2. 参数优化后结果"
-            if btn.isChecked():
-                self.pmml_box.addItem(text)
-            else:
-                if self.pmml_box.findText(text) == -1:
-                    pass
-                else:
-                    self.pmml_box.removeItem(self.pmml_box.findText(text))
+        elif index == 1:
+            smooth_label = QLabel("平滑度")
+            smooth_text = QLineEdit("0.2")
+            self._loss_setting_layout.addWidget(smooth_label)
+            self._loss_setting_layout.addWidget(smooth_text)
+        elif index == 2:
+            alpha_label = QLabel("正负样本权重(α)")
+            alpha_text = QLineEdit("0.5")
+            gamma_label = QLabel("难易样本权重(γ)")
+            gamma_text = QLineEdit("2")
+            self._loss_setting_layout.addWidget(alpha_label)
+            self._loss_setting_layout.addWidget(alpha_text)
+            self._loss_setting_layout.addWidget(gamma_label)
+            self._loss_setting_layout.addWidget(gamma_text)
 
     def export(self) -> dict:
-        return {
-            "isOptimized": self.setting_btn_group.buttons()[0].isChecked(),
-            "isVarSelected": self.setting_btn_group.buttons()[1].isChecked(),
-            "isAutoImported": self.setting_btn_group.buttons()[2].isChecked(),
-            "inferIndex": int(self.pmml_box.currentText()[0]) - 1
-        }
+        res = {"optimizer": [], "loss": [], "epoch": 10}
+
+        res["optimizer"].append(self.opti_select_combox.currentText())
+        for i in range(self._opti_setting_layout.count()):
+            item = self._opti_setting_layout.itemAt(i)
+            if item.widget():
+                res["optimizer"].append(process_component(item.widget()))
+
+        res["loss"].append(self.loss_select_combox.currentText())
+        for i in range(self._loss_setting_layout.count()):
+            item = self._loss_setting_layout.itemAt(i)
+            if item.widget():
+                res["loss"].append(process_component(item.widget()))
+        return res
 
 
-class TStartExportWidget(QWidget):
+class IStartExportWidget(QWidget):
 
     def __init__(self, index: int, case_path: str, task_type: str):
         super().__init__()
         self.index = index
-        self.name = "TStartExportWidget"
+        self.name = "IStartExportWidget"
         self.case_path = case_path
         self.task_type = task_type
         self.setting_config = {}

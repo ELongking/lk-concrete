@@ -2,6 +2,7 @@ package com.longking.concrete.service.impl;
 
 
 import com.longking.concrete.mapper.CaseHandleMapper;
+import com.longking.concrete.model.CaseTypes;
 import com.longking.concrete.model.StorageInfo;
 import com.longking.concrete.service.CaseHandleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,4 +29,7 @@ public class CaseHandleServiceImpl implements CaseHandleService {
 
     @Override
     public int updateLastModify(String cid, long lastModify) {return caseHandleMapper.updateByLastModify(cid, lastModify);}
+
+    @Override
+    public List<CaseTypes> getCaseTypes(String cid){return caseHandleMapper.selectTypesByCid(cid);}
 }

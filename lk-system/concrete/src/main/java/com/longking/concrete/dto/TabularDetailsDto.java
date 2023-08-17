@@ -15,7 +15,7 @@ public class TabularDetailsDto {
     private String id = IdUtil.fastSimpleUUID();
     @Indexed
     private String cid;
-    private final String fileType = "tabular";
+    private String fileType;
     private List<String> cols;
     private List<String> xCols;
     private List<String> yCols;
@@ -25,4 +25,8 @@ public class TabularDetailsDto {
     private List<Double> mean;
     private List<Double> std;
     private List<List<Double>> allData;
+
+    public TabularDetailsDto() {
+        this.fileType = "tabular";
+    }
 }

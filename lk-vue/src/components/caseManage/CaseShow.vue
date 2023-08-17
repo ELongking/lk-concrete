@@ -13,7 +13,11 @@
         <el-table-column prop="isTrained" label="是否训练" minWidth="15%"/>
         <el-table-column fixed="right" label="操作" minWidth="15%">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="caseDetails(scope.row)">详情</el-button>
+            <el-button
+                v-loading.fullscreen.lock="fullLoading"
+                type="primary"
+                size="small"
+                @click="caseDetails(scope.row)">详情</el-button>
             <el-button type="primary" size="small" @click="caseDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -41,6 +45,7 @@
 
     </div>
 
+
     <DetailCard
         v-if="isDetails"
         @toDetailVisible="toDetailVisible"
@@ -56,6 +61,7 @@
 <script>
 import axios from "axios";
 import {timeFormatConvert, sizeFormat} from "@/script/utils";
+import { ElLoading } from 'element-plus'
 import MessageBox from "@/components/MessageBox.vue";
 import DetailCard from "@/components/caseManage/DetailCard.vue";
 
@@ -74,7 +80,8 @@ export default {
       boolToHans: {1: "是", 0: "否"},
       baseInfo: {},
       jsonInfo: [],
-      isDetails: false
+      isDetails: false,
+      fullLoading: false,
     }
   },
   created() {
@@ -110,6 +117,7 @@ export default {
       this.nowPage = val
     },
     caseDetails(row) {
+      this.fullLoading = true
       axios.get("http://localhost:9000/cases/detail/" + row.cid).then(resp => {
         let res = resp.data
         if (res.code === 1) {
@@ -130,6 +138,7 @@ export default {
           this.baseInfo["imageSize"] = sizeFormat(imageSize)
 
           this.jsonInfo = res.data
+          this.fullLoading = false
           this.isDetails = true
         } else {
           this.boxInfo.title = "出错"

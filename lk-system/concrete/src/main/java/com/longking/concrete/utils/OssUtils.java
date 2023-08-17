@@ -33,10 +33,10 @@ public class OssUtils {
             cols.add(file.getName());
         } else {
             FileReader fileReader = new FileReader();
-            String flag = fileReader.compressReader(absPath);
-            cols.add(flag);
+            cols = fileReader.compressReader(absPath);
+            cols.add(String.valueOf(fileReader.getImagesNumber()));
             cols.add(file.getName());
-            if (!flag.equals("success")) {
+            if (!cols.get(0).equals("success")) {
                 return CommonResult.fail(cols, cols.get(0));
             }
         }
@@ -129,7 +129,7 @@ public class OssUtils {
 
         OSSClient client = new OSSClient(endPoint, keyId, keySecret);
         String fileUrl = uid + "/" + cid + "/" + name;
-        System.out.println(fileUrl);
+
         OSSObject ossObject = client.getObject(bucketName, fileUrl);
         return new OssObjectDto(client, ossObject);
     }

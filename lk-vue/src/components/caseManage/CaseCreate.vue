@@ -319,11 +319,15 @@ export default {
         }
         this.configForm.push(item)
       } else {
+        const number = data.pop()
+        const exampleNames = data.slice(1)
         const item = {
           cid: this.cid,
           fileName: getFileOriName(filename, "name"),
           fileType: "image",
           batchName: getFileOriName(filename, "name"),
+          number: number,
+          exampleNames: exampleNames
         }
         this.configForm.push(item)
       }
