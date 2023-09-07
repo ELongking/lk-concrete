@@ -1,5 +1,3 @@
-from PyQt5.QtWidgets import *
-
 from connector.SqlHandle import SqlHandle
 from connector.OssHandle import OssHandle
 
@@ -91,30 +89,35 @@ class ProcessWindow(QMainWindow):
 
         index = 0
         task_type = self.sql_handle.get_task_type(cid=self.config[0]["cid"], mode="tabular")
-        for _ in range(aside_tree.item_num[0]):
-            index += 1
-            t_stacked_widgets = [
-                TPreProcessWidget(index=index),
-                TAlgoSelectWidget(index=index,
-                                  task_type=task_type),
-                TSettingWidget(index=index),
-                TStartExportWidget(index=index,
-                                   case_path=tabular_case_path,
-                                   task_type=task_type),
-            ]
-            t_stacked_widgets[-1].import_widgets(widgets=t_stacked_widgets[:3], data_config=self.config[index - 1])
-            for t in t_stacked_widgets:
-                self.train_main_widget.addWidget(t)
-        for _ in range(aside_tree.item_num[1]):
-            index += 1
-            i_stacked_widgets = [
-                IPreProcessWidget(index=index),
-                IAlgoSelectWidget(index=index, task_type=task_type),
-                ISettingWidget(index=index),
-                IStartExportWidget(index=index, task_type=task_type, case_path=image_case_path),
-            ]
-            for i in i_stacked_widgets:
-                self.train_main_widget.addWidget(i)
+        if task_type:
+            for _ in range(aside_tree.item_num[0]):
+                index += 1
+                t_stacked_widgets = [
+                    TPreProcessWidget(index=index),
+                    TAlgoSelectWidget(index=index,
+                                      task_type=task_type),
+                    TSettingWidget(index=index),
+                    TStartExportWidget(index=index,
+                                       case_path=tabular_case_path,
+                                       task_type=task_type),
+                ]
+                t_stacked_widgets[-1].import_widgets(widgets=t_stacked_widgets[:3], data_config=self.config[index - 1])
+                for t in t_stacked_widgets:
+                    self.train_main_widget.addWidget(t)
+
+        task_type = self.sql_handle.get_task_type(cid=self.config[0]["cid"], mode="image")
+        if task_type:
+            for _ in range(aside_tree.item_num[1]):
+                index += 1
+                i_stacked_widgets = [
+                    IPreProcessWidget(index=index),
+                    IAlgoSelectWidget(index=index, task_type=task_type),
+                    ISettingWidget(index=index),
+                    IStartExportWidget(index=index, task_type=task_type, case_path=image_case_path),
+                ]
+                i_stacked_widgets[-1].import_widgets(widgets=i_stacked_widgets[:3], data_config=self.config[index - 1])
+                for i in i_stacked_widgets:
+                    self.train_main_widget.addWidget(i)
 
         h_layout = QHBoxLayout()
         h_layout.addWidget(aside_tree)

@@ -1,1 +1,1 @@
-__all__ = ['AsideTree', "ImageCheckWidgets", "ListenerObject", "MsgBox", "TabularCheckWidgets"]
+__all__ = ['AsideTree', "ImageCheckWidgets", "ListenerObject", "MsgBox", "TabularCheckWidgets", "TinyTools"]

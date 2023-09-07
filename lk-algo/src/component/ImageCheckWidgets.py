@@ -2,8 +2,9 @@ import os.path as osp
 
 from PyQt5.QtCore import QProcess
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QPixmap
 
+from src.component.TinyTools import InfoLabel, LkItem
 from src.tabular.Prediction import PredictionThread
 
 
@@ -12,13 +13,24 @@ def reformat_tool_info(f: list) -> str:
     if f:
         for index, item in enumerate(f):
             if index == 0:
-                res += item[0]
-            res += f"{item[0]} -> {item[1]}, {item[2]}M\n"
+                res += item[0] + "\n"
+            else:
+                res += f"{item[0]} -> {item[1]}, {item[2]}M\n"
+    res = res[:-1]
     return res
 
 
+def clear_layout(layout: QLayout):
+    while layout.count():
+        child = layout.takeAt(0)
+        if child.widget():
+            child.widget().deleteLater()
+        elif child.layout():
+            clear_layout(child.layout())
+
+
 def process_component(component):
-    res = ""
+    res = None
     if isinstance(component, QLineEdit):
         res = component.text()
     if isinstance(component, QRadioButton):
@@ -45,9 +57,11 @@ class IPreProcessWidget(QWidget):
         mean_aug_check.setEnabled(False)
         mean_aug_text = QLineEdit("mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]")
         mean_aug_text.setEnabled(False)
+        ans_tool_label = InfoLabel("图片色彩标准化的均值和方差")
         h_layout_v1_1.addWidget(mean_aug_check)
         h_layout_v1_1.addWidget(mean_aug_label)
         h_layout_v1_1.addWidget(mean_aug_text)
+        h_layout_v1_1.addWidget(ans_tool_label)
         v_layout_1.addLayout(h_layout_v1_1)
 
         h_layout_v1_2 = QHBoxLayout()
@@ -57,70 +71,74 @@ class IPreProcessWidget(QWidget):
         resize_aug_check.setEnabled(False)
         resize_aug_text = QLineEdit("256")
         resize_aug_text.setEnabled(False)
+        ans_tool_label = InfoLabel("Resize images")
         h_layout_v1_2.addWidget(resize_aug_check)
         h_layout_v1_2.addWidget(resize_aug_label)
         h_layout_v1_2.addWidget(resize_aug_text)
+        h_layout_v1_2.addWidget(ans_tool_label)
         v_layout_1.addLayout(h_layout_v1_2)
 
         h_layout_v1_3 = QHBoxLayout()
         crop_aug_label = QLabel("RandomCrop")
         crop_aug_check = QCheckBox()
         self.crop_aug_text = QLineEdit("224")
-        self.crop_aug_text.setPlaceholderText("Cannot larger than 256")
+        ans_tool_label = InfoLabel("图片裁剪的尺寸, 不能大于256")
         h_layout_v1_3.addWidget(crop_aug_check)
         h_layout_v1_3.addWidget(crop_aug_label)
         h_layout_v1_3.addWidget(self.crop_aug_text)
+        h_layout_v1_3.addWidget(ans_tool_label)
         v_layout_1.addLayout(h_layout_v1_3)
 
         h_layout_v1_4 = QHBoxLayout()
         rana_aug_label = QLabel("RandomAug")
         rana_aug_check = QCheckBox()
         self.rana_aug_text = QLineEdit("2,6")
-        self.rana_aug_text.setPlaceholderText("Format: n(the number of transforms),m(the number of sub-strategies")
+        ans_tool_label = InfoLabel("Format: n(the number of transforms),m(the number of sub-strategies")
         h_layout_v1_4.addWidget(rana_aug_check)
         h_layout_v1_4.addWidget(rana_aug_label)
         h_layout_v1_4.addWidget(self.rana_aug_text)
+        h_layout_v1_4.addWidget(ans_tool_label)
         v_layout_1.addLayout(h_layout_v1_4)
 
         h_layout_v1_5 = QHBoxLayout()
         cutmix_aug_label = QLabel("CutMix")
         cutmix_aug_check = QCheckBox()
         self.cutmix_aug_text = QLineEdit("0.6")
-        self.cutmix_aug_text.setPlaceholderText("0-1, means mix-part ratio to ori image")
+        ans_tool_label = InfoLabel("0到1, 图片融合的比例")
         h_layout_v1_5.addWidget(cutmix_aug_check)
         h_layout_v1_5.addWidget(cutmix_aug_label)
         h_layout_v1_5.addWidget(self.cutmix_aug_text)
+        h_layout_v1_5.addWidget(ans_tool_label)
         v_layout_1.addLayout(h_layout_v1_5)
 
         h_layout_v1_6 = QHBoxLayout()
         mixup_aug_label = QLabel("MixUp")
         mixup_aug_check = QCheckBox()
         self.mixup_aug_text = QLineEdit("0.6")
-        self.mixup_aug_text.setPlaceholderText("0-1, means mix-part ratio to ori image")
+        ans_tool_label = InfoLabel("0到1, 图片融合的比例")
         h_layout_v1_6.addWidget(mixup_aug_check)
         h_layout_v1_6.addWidget(mixup_aug_label)
         h_layout_v1_6.addWidget(self.mixup_aug_text)
+        h_layout_v1_6.addWidget(ans_tool_label)
         v_layout_1.addLayout(h_layout_v1_6)
 
-        self.aug_check_group = QButtonGroup()
-        self.aug_check_group.addButton(mean_aug_check)
-        self.aug_check_group.addButton(resize_aug_check)
-        self.aug_check_group.addButton(crop_aug_check)
-        self.aug_check_group.addButton(rana_aug_check)
-        self.aug_check_group.addButton(cutmix_aug_check)
-        self.aug_check_group.addButton(mixup_aug_check)
-        self.aug_check_group.setExclusive(False)
+        self.aug_check_group = []
+        self.aug_check_group.append(mean_aug_check)
+        self.aug_check_group.append(resize_aug_check)
+        self.aug_check_group.append(crop_aug_check)
+        self.aug_check_group.append(rana_aug_check)
+        self.aug_check_group.append(cutmix_aug_check)
+        self.aug_check_group.append(mixup_aug_check)
 
         v_layout.addLayout(v_layout_1)
         self.setLayout(v_layout)
 
     def export(self) -> dict:
         res = {"aug": []}
-        for idx, btn in enumerate(self.aug_check_group.buttons()):
+        for idx, btn in enumerate(self.aug_check_group):
             if not btn.isChecked():
                 continue
-
-            if idx == 0 and idx == 1:
+            if idx == 0 or idx == 1:
                 pass
             elif idx == 2:
                 res["aug"].append(["crop", self.crop_aug_text.text()])
@@ -150,7 +168,7 @@ class IAlgoSelectWidget(QWidget):
         cls_algo = [
             {
                 "name": "ResNet",
-                "size": [18, 34, 50, 101, 152],
+                "size": ["18", "34", "50", "101", "152"],
                 "info": [
                     ["四个Layer内的Block数目和种类"],
                     [18, "2,2,2,2 ResBlock", 11.176],
@@ -162,7 +180,7 @@ class IAlgoSelectWidget(QWidget):
             },
             {
                 "name": "ShuffleNet",
-                "size": [0.5, 1.0, 1.5, 2.0],
+                "size": ["0.5", "1.0", "1.5", "2.0"],
                 "info": [
                     ["FeatureBlock 输出通道"],
                     [0.5, "24,48,96,192,1024", 0.344],
@@ -205,7 +223,7 @@ class IAlgoSelectWidget(QWidget):
         det_algo = [
             {
                 "name": "FasterRCNN",
-                "size": [1, 2, 3],
+                "size": ["1", "2", "3"],
                 "info": []
             },
             {
@@ -215,11 +233,11 @@ class IAlgoSelectWidget(QWidget):
             },
             {
                 "name": "EfficientDet",
-                "size": [1, 2, 3],
+                "size": ["1", "2", "3"],
                 "info": []
             }
         ]
-        seg_algo = [{"name": "MaskRCNN", "size": [1, 2, 3]}, {"name": "SoloV2", "size": [1, 2, 3]}]
+        seg_algo = [{"name": "MaskRCNN", "size": ["1", "2", "3"]}, {"name": "SoloV2", "size": ["1", "2", "3"]}]
 
         if self.task_type == "cls":
             all_algo = cls_algo
@@ -230,24 +248,36 @@ class IAlgoSelectWidget(QWidget):
 
         self.all_algo = all_algo
         self.algo_radio_group = QButtonGroup()
+        self.algo_radio_group.buttonClicked.connect(self._algo_changed)
         self.algo_size_comboxes = []
         for idx, algo in enumerate(all_algo):
             ans_h_layout = QHBoxLayout()
             ans_radio_btn = QRadioButton(algo["name"])
             if idx == 0:
                 ans_radio_btn.setChecked(True)
-            self.algo_radio_group.addButton(ans_radio_btn)
+            self.algo_radio_group.addButton(ans_radio_btn, idx)
             ans_label = QLabel("模型大小", self)
             ans_size_combox = QComboBox()
             ans_size_combox.addItems(algo["size"])
             self.algo_size_comboxes.append(ans_size_combox)
-            ans_tool_label = QLabel(self)
-            ans_tool_label.setPixmap(QPixmap("../assets/info.png").scaledToWidth(30))
-            ans_tool_label.setToolTip(reformat_tool_info(f=algo["info"]))
+            ans_tool_label = InfoLabel(reformat_tool_info(f=algo["info"]))
 
+            ans_h_layout.addWidget(ans_radio_btn)
             ans_h_layout.addWidget(ans_label)
             ans_h_layout.addWidget(ans_size_combox)
             ans_h_layout.addWidget(ans_tool_label)
+            v_layout.addLayout(ans_h_layout)
+
+        self._algo_changed(self.algo_radio_group.buttons()[0])
+        self.setLayout(v_layout)
+
+    def _algo_changed(self, btn):
+        idx = self.algo_radio_group.id(btn)
+        for i in range(len(self.algo_size_comboxes)):
+            if i != idx:
+                self.algo_size_comboxes[i].setEnabled(False)
+            else:
+                self.algo_size_comboxes[i].setEnabled(True)
 
     def export(self) -> dict:
         for idx, btn in enumerate(self.algo_radio_group.buttons()):
@@ -267,125 +297,251 @@ class ISettingWidget(QWidget):
 
         v_layout_1 = QVBoxLayout()
         h_layout_v1_1 = QHBoxLayout()
-        opti_label = QLabel("优化器:")
-        self.opti_select_combox = QComboBox()
-        self.opti_select_combox.addItems(["SGD", "Adam", "AdamW"])
-        self.opti_select_combox.currentIndexChanged.connect(self._opti_changed)
-        h_layout_v1_1.addWidget(opti_label)
-        h_layout_v1_1.addWidget(self.opti_select_combox)
-        self._opti_setting_layout = QHBoxLayout()
+        opti_select_combox = QComboBox()
+        opti_select_combox.addItems(["SGD", "Adam", "AdamW"])
+        opti_select_combox.currentIndexChanged.connect(self._opti_changed)
+        self.opti_select_item = LkItem(label_txt="优化器", key="optimizer", main=opti_select_combox)
+        h_layout_v1_1.addWidget(self.opti_select_item)
+        self._opti_setting_layout = QVBoxLayout()
+        self._opti_settings = []
         v_layout_1.addLayout(h_layout_v1_1)
         v_layout_1.addLayout(self._opti_setting_layout)
+        self._opti_changed(0)
 
         v_layout_2 = QVBoxLayout()
         h_layout_v2_1 = QHBoxLayout()
-        loss_label = QLabel("损失函数")
-        self.loss_select_combox = QComboBox()
-        self.loss_select_combox.addItems(["CrossEntropy",
-                                          "LabelSmoothingCrossEntropy",
-                                          "Focal", ])
-        self.loss_select_combox.currentIndexChanged.connect(self._loss_changed)
-        h_layout_v2_1.addWidget(opti_label)
-        h_layout_v2_1.addWidget(self.opti_select_combox)
-        self._loss_setting_layout = QHBoxLayout()
+        loss_select_combox = QComboBox()
+        loss_select_combox.addItems(["CrossEntropy",
+                                     "LabelSmoothingCrossEntropy",
+                                     "Focal", ])
+        loss_select_combox.currentIndexChanged.connect(self._loss_changed)
+        self.loss_select_item = LkItem(label_txt="损失函数", key="loss_func", main=loss_select_combox)
+        h_layout_v2_1.addWidget(self.loss_select_item)
+        self._loss_setting_layout = QVBoxLayout()
+        self._loss_settings = []
         v_layout_2.addLayout(h_layout_v2_1)
         v_layout_2.addLayout(self._loss_setting_layout)
+        self._loss_changed(0)
+
+        v_layout_3 = QVBoxLayout()
+        h_layout_v3_1 = QHBoxLayout()
+        lr_text = QLineEdit("0.01")
+        self.lr_item = LkItem(label_txt="学习率", key="lr", main=lr_text)
+        scheduler_select_combox = QComboBox()
+        scheduler_select_combox.addItems(["None", "Cosine", "Step", "Poly"])
+        scheduler_select_combox.currentIndexChanged.connect(self._scheduler_changed)
+        self.scheduler_select_item = LkItem(label_txt="迭代策略", key="scheduler", main=scheduler_select_combox)
+        h_layout_v3_1.addWidget(self.lr_item)
+        h_layout_v3_1.addWidget(self.scheduler_select_item)
+        self._scheduler_setting_layout = QVBoxLayout()
+        self._scheduler_settings = []
+        v_layout_3.addLayout(h_layout_v3_1)
+        v_layout_3.addLayout(self._scheduler_setting_layout)
+        self._scheduler_changed(0)
+
+        v_layout_4 = QVBoxLayout()
+        h_layout_v4_1 = QHBoxLayout()
+        epoch_text = QLineEdit("100")
+        self.epoch_item = LkItem(label_txt="训练次数", key="epoch", main=epoch_text)
+        valid_text = QLineEdit("10")
+        self.valid_item = LkItem(label_txt="验证间隔", key="valid", main=valid_text)
+        h_layout_v4_1.addWidget(self.epoch_item)
+        h_layout_v4_1.addWidget(self.valid_item)
+        # -------------------
+        h_layout_v4_2 = QHBoxLayout()
+        batch_text = QLineEdit("32")
+        batch_text.textChanged.connect(lambda x: self.last_batch_radio.setText(f"若最后一个批次中数据数量不足{x}, 是否舍弃?"))
+        self.batch_item = LkItem(label_txt="批次大小", key="bs", main=batch_text)
+        self.last_batch_radio = QRadioButton("若最后一个批次中数据数量不足32, 是否舍弃?")
+        h_layout_v4_2.addWidget(self.batch_item)
+        h_layout_v4_2.addWidget(self.last_batch_radio)
+        v_layout_4.addLayout(h_layout_v4_1)
+        v_layout_4.addLayout(h_layout_v4_2)
 
         v_layout.addLayout(v_layout_1)
         v_layout.addLayout(v_layout_2)
+        v_layout.addLayout(v_layout_3)
+        v_layout.addLayout(v_layout_4)
         self.setLayout(v_layout)
 
     def _opti_changed(self, index):
-        while self._opti_setting_layout.count():
-            child = self._opti_setting_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        if index == 0:
-            learning_rate_label = QLabel("学习率")
-            learning_rate_text = QLineEdit("1e-3")
-            momentum_label = QLabel("动量")
-            momentum_text = QLineEdit("0.95")
+        self._opti_settings = []
+        clear_layout(layout=self._opti_setting_layout)
 
-            self._opti_setting_layout.addWidget(learning_rate_label)
-            self._opti_setting_layout.addWidget(learning_rate_text)
-            self._opti_setting_layout.addWidget(momentum_label)
-            self._opti_setting_layout.addWidget(momentum_text)
+        if index == 0:
+            learning_rate_text = QLineEdit("1e-3")
+            learning_rate_item = LkItem(label_txt="学习率", key="lr", main=learning_rate_text)
+            self._opti_settings.append(learning_rate_item)
+            momentum_text = QLineEdit("0.95")
+            momentum_item = LkItem(label_txt="动量", key="momentum", main=momentum_text)
+            self._opti_settings.append(momentum_item)
 
         elif index == 1:
-            learning_rate_label = QLabel("学习率")
             learning_rate_text = QLineEdit("1e-3")
-            beta1_label = QLabel("一阶矩估计指数衰减率")
+            learning_rate_item = LkItem(label_txt="学习率", key="lr", main=learning_rate_text)
+            self._opti_settings.append(learning_rate_item)
             beta1_text = QLineEdit("0.9")
-            beta2_label = QLabel("二阶矩估计指数衰减率")
+            beta1_item = LkItem(label_txt="一阶矩估计指数衰减率", key="beta1", main=beta1_text)
+            self._opti_settings.append(beta1_item)
             beta2_text = QLineEdit("0.999")
-
-            self._opti_setting_layout.addWidget(learning_rate_label)
-            self._opti_setting_layout.addWidget(learning_rate_text)
-            self._opti_setting_layout.addWidget(beta1_label)
-            self._opti_setting_layout.addWidget(beta1_text)
-            self._opti_setting_layout.addWidget(beta2_label)
-            self._opti_setting_layout.addWidget(beta2_text)
+            beta2_item = LkItem(label_txt="二阶矩估计指数衰减率", key="beta2", main=beta2_text)
+            self._opti_settings.append(beta2_item)
 
         elif index == 2:
-            learning_rate_label = QLabel("学习率")
             learning_rate_text = QLineEdit("1e-3")
-            beta1_label = QLabel("一阶矩估计指数衰减率")
+            learning_rate_item = LkItem(label_txt="学习率", key="lr", main=learning_rate_text)
+            self._opti_settings.append(learning_rate_item)
             beta1_text = QLineEdit("0.9")
-            beta2_label = QLabel("二阶矩估计指数衰减率")
+            beta1_item = LkItem(label_txt="一阶矩估计指数衰减率", key="beta1", main=beta1_text)
+            self._opti_settings.append(beta1_item)
             beta2_text = QLineEdit("0.999")
-            weight_decay_label = QLabel("权重衰减")
+            beta2_item = LkItem(label_txt="二阶矩估计指数衰减率", key="beta2", main=beta2_text)
+            self._opti_settings.append(beta2_item)
             weight_decay_text = QLineEdit("0.1")
+            weight_decay_item = LkItem(label_txt="权重衰减", key="weight_decay", main=weight_decay_text)
+            self._opti_settings.append(weight_decay_item)
 
-            self._opti_setting_layout.addWidget(learning_rate_label)
-            self._opti_setting_layout.addWidget(learning_rate_text)
-            self._opti_setting_layout.addWidget(beta1_label)
-            self._opti_setting_layout.addWidget(beta1_text)
-            self._opti_setting_layout.addWidget(beta2_label)
-            self._opti_setting_layout.addWidget(beta2_text)
-            self._opti_setting_layout.addWidget(weight_decay_label)
-            self._opti_setting_layout.addWidget(weight_decay_text)
+        if self._opti_settings:
+            for i in range(0, len(self._opti_settings), 2):
+                ans_h_layout = QHBoxLayout()
+                ans_h_layout.addWidget(self._opti_settings[i])
+                try:
+                    ans_h_layout.addWidget(self._opti_settings[i + 1])
+                except:
+                    pass
+                self._opti_setting_layout.addLayout(ans_h_layout)
 
     def _loss_changed(self, index):
-        while self._loss_setting_layout.count():
-            child = self._loss_setting_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+        self._loss_settings = []
+        clear_layout(layout=self._loss_setting_layout)
+
         if index == 0:
             pass
         elif index == 1:
-            smooth_label = QLabel("平滑度")
             smooth_text = QLineEdit("0.2")
-            self._loss_setting_layout.addWidget(smooth_label)
-            self._loss_setting_layout.addWidget(smooth_text)
+            smooth_item = LkItem(label_txt="平滑度", key="smooth", main=smooth_text)
+            self._loss_settings.append(smooth_item)
         elif index == 2:
-            alpha_label = QLabel("正负样本权重(α)")
             alpha_text = QLineEdit("0.5")
-            gamma_label = QLabel("难易样本权重(γ)")
+            alpha_item = LkItem(label_txt="正负样本权重(α)", key="alpha", main=alpha_text)
+            self._loss_settings.append(alpha_item)
             gamma_text = QLineEdit("2")
-            self._loss_setting_layout.addWidget(alpha_label)
-            self._loss_setting_layout.addWidget(alpha_text)
-            self._loss_setting_layout.addWidget(gamma_label)
-            self._loss_setting_layout.addWidget(gamma_text)
+            gamma_item = LkItem(label_txt="难易样本权重(γ)", key="gamma", main=gamma_text)
+            self._loss_settings.append(gamma_item)
+
+        if self._loss_settings:
+            for i in range(0, len(self._loss_settings), 2):
+                ans_h_layout = QHBoxLayout()
+                ans_h_layout.addWidget(self._loss_settings[i])
+                try:
+                    ans_h_layout.addWidget(self._loss_settings[i + 1])
+                except:
+                    pass
+                self._loss_setting_layout.addLayout(ans_h_layout)
+
+    def _scheduler_changed(self, index):
+        self._scheduler_settings = []
+        clear_layout(layout=self._scheduler_setting_layout)
+
+        if index == 0:
+            pass
+        elif index == 1:
+            min_lr_text = QLineEdit("1e-5")
+            min_lr_item = LkItem(label_txt="学习率最小值", key="lr_min", main=min_lr_text)
+            self._scheduler_settings.append(min_lr_item)
+            t_initial_text = QLineEdit("0")
+            t_initial_item = LkItem(label_txt="下降一个周期的迭代次数", key="t_initial", main=t_initial_text)
+            self._scheduler_settings.append(t_initial_item)
+            # ---
+            warmup_t_text = QLineEdit("0")
+            warmup_t_item = LkItem(label_txt="预热迭代次数", key="warmup_t", main=warmup_t_text)
+            self._scheduler_settings.append(warmup_t_item)
+            warmup_lr_text = QLineEdit("0")
+            warmup_lr_item = LkItem(label_txt="预热状态初始学习率", key="warmup_lr_init", main=warmup_lr_text)
+            self._scheduler_settings.append(warmup_lr_item)
+            # ---
+            cycle_limit_text = QLineEdit("1")
+            cycle_limit_item = LkItem(label_txt="下降周期的最大个数", key="cycle_limit", main=cycle_limit_text)
+            self._scheduler_settings.append(cycle_limit_item)
+            cycle_decay_text = QLineEdit("1")
+            cycle_decay_item = LkItem(label_txt="周期初始开始的下降倍数", key="cycle_decay", main=cycle_decay_text)
+            self._scheduler_settings.append(cycle_decay_item)
+
+        elif index == 2:
+            decay_t_text = QLineEdit("10")
+            decay_t_item = LkItem(label_txt="下降一个系数的迭代次数", key="decay_t", main=decay_t_text)
+            self._scheduler_settings.append(decay_t_item)
+            decay_rate_text = QLineEdit("1")
+            decay_rate_item = LkItem(label_txt="下降系数", key="decay_rate", main=decay_rate_text)
+            self._scheduler_settings.append(decay_rate_item)
+            # ---
+            warmup_t_text = QLineEdit("0")
+            warmup_t_item = LkItem(label_txt="预热迭代次数", key="warmup_t", main=warmup_t_text)
+            self._scheduler_settings.append(warmup_t_item)
+            warmup_lr_text = QLineEdit("0")
+            warmup_lr_item = LkItem(label_txt="预热状态初始学习率", key="warmup_lr_init", main=warmup_lr_text)
+            self._scheduler_settings.append(warmup_lr_item)
+
+        else:
+            min_lr_text = QLineEdit("1e-5")
+            min_lr_item = LkItem(label_txt="学习率最小值", key="lr_min", main=min_lr_text)
+            self._scheduler_settings.append(min_lr_item)
+            t_initial_text = QLineEdit("0")
+            t_initial_item = LkItem(label_txt="下降一个周期的迭代次数", key="t_initial", main=t_initial_text)
+            self._scheduler_settings.append(t_initial_item)
+            power_text = QLineEdit("0.5")
+            power_item = LkItem(label_txt="多项式指数", key="power", main=power_text)
+            self._scheduler_settings.append(power_item)
+            # ---
+            warmup_t_text = QLineEdit("0")
+            warmup_t_item = LkItem(label_txt="预热迭代次数", key="warmup_t", main=warmup_t_text)
+            self._scheduler_settings.append(warmup_t_item)
+            warmup_lr_text = QLineEdit("0")
+            warmup_lr_item = LkItem(label_txt="预热状态初始学习率", key="warmup_lr_init", main=warmup_lr_text)
+            self._scheduler_settings.append(warmup_lr_item)
+            # ---
+            cycle_limit_text = QLineEdit("1")
+            cycle_limit_item = LkItem(label_txt="下降周期的最大个数", key="cycle_limit", main=cycle_limit_text)
+            self._scheduler_settings.append(cycle_limit_item)
+            cycle_decay_text = QLineEdit("1")
+            cycle_decay_item = LkItem(label_txt="周期初始开始的下降倍数", key="cycle_decay", main=cycle_decay_text)
+            self._scheduler_settings.append(cycle_decay_item)
+
+        if self._scheduler_settings:
+            for i in range(0, len(self._scheduler_settings), 2):
+                ans_h_layout = QHBoxLayout()
+                ans_h_layout.addWidget(self._scheduler_settings[i])
+                try:
+                    ans_h_layout.addWidget(self._scheduler_settings[i + 1])
+                except:
+                    pass
+                self._scheduler_setting_layout.addLayout(ans_h_layout)
 
     def export(self) -> dict:
-        res = {"optimizer": [], "loss": [], "epoch": 10}
+        res = {"optimizer": dict(), "loss": dict(), "scheduler": dict(), "epoch": "", "valid": "", "bs": "",
+               "is_last": None}
 
-        res["optimizer"].append(self.opti_select_combox.currentText())
-        for i in range(self._opti_setting_layout.count()):
-            item = self._opti_setting_layout.itemAt(i)
-            if item.widget():
-                res["optimizer"].append(process_component(item.widget()))
+        res["optimizer"].update(self.opti_select_item.get_pair())
+        for item in self._opti_settings:
+            res["optimizer"].update(item.get_pair())
 
-        res["loss"].append(self.loss_select_combox.currentText())
-        for i in range(self._loss_setting_layout.count()):
-            item = self._loss_setting_layout.itemAt(i)
-            if item.widget():
-                res["loss"].append(process_component(item.widget()))
+        res["loss"].update(self.loss_select_item.get_pair())
+        for item in self._loss_settings:
+            res["loss"].update(item.get_pair())
+
+        res["scheduler"].update(self.scheduler_select_item.get_pair())
+        for item in self._scheduler_settings:
+            res["loss"].update(item.get_pair())
+
+        res.update(self.batch_item.get_pair())
+        res.update(self.valid_item.get_pair())
+        res.update(self.lr_item.get_pair())
+        res.update(self.epoch_item.get_pair())
+        res.update(is_last=self.last_batch_radio.isChecked())
         return res
 
 
 class IStartExportWidget(QWidget):
-
     def __init__(self, index: int, case_path: str, task_type: str):
         super().__init__()
         self.index = index
@@ -428,17 +584,7 @@ class IStartExportWidget(QWidget):
         self.setting_config = {}
         for widget in self.widgets:
             self.setting_config.update(widget.export())
-
-        df_path = osp.join(self.case_path, self.data_config["fileName"])
-        self.thread = PredictionThread(setting_config=self.setting_config,
-                                       data_config=self.data_config,
-                                       task_type=self.task_type,
-                                       df_path=df_path,
-                                       opt_path=osp.join(self.case_path, "output"))
-        self.thread.signal.connect(self._log_text_show)
-        self.thread.bool_signal.connect(self._stop_enabled_changed)
-
-        self.thread.start()
+        print(self.setting_config)
 
     def stop(self) -> None:
         self.thread.quit()

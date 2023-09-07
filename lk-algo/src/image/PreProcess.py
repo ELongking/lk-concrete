@@ -1,13 +1,13 @@
-import os
 import os.path as osp
 import re
-
 import numpy as np
-from sklearn.utils import shuffle
-
 from PIL import Image
 
-import torch
+from torch.optim import SGD, Adam, AdamW
+from torch.nn import CrossEntropyLoss
+from timm.scheduler import CosineLRScheduler, StepLRScheduler, PolyLRScheduler
+from timm.loss import LabelSmoothingCrossEntropy
+
 from torch.utils.data import Dataset
 from torchvision.transforms import *
 
@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=2, alpha=None):
+    def __init__(self, alpha=None, gamma=2):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
@@ -133,7 +133,6 @@ class ClsDataset(Dataset):
                 for label in classes:
                     combine_data.append([image, label])
 
-        combine_data = shuffle(combine_data, random_state=42)
         for img, lab in combine_data:
             self.data.append(img)
             self.labels.append(lab)
@@ -147,17 +146,68 @@ class ImageAugMethod:
             "resize": Resize(256)
         }
         self.advanced_aug = {
-            "crop": RandomCrop(224),
-            "randaug": RandAugment(),
-            "cutmix": CutMix(),
-            "mixup": MixUp()
+            "crop": RandomCrop,
+            "randaug": RandAugment,
+            "cutmix": CutMix,
+            "mixup": MixUp
         }
 
-    def get_transform_method(self, aug_params: dict) -> Compose:
+    def get_transform_method(self, params: list) -> Compose:
         compose = [
             self.base_aug["mean"],
             self.base_aug["resize"],
         ]
-        for key, val in aug_params.items():
-            compose.append(self.advanced_aug[key])
-            pass
+        for name, val in params:
+            values = val.split(",")
+            if len(values) > 1:
+                values = list(map(lambda x: float(x), values))
+                compose.append(self.advanced_aug[name](*values))
+            else:
+                value = float(values[0])
+                compose.append(self.advanced_aug[name](value))
+
+
+class OptimizerMethod:
+    def __init__(self):
+        self.optimizer = {
+            "SGD": SGD,
+            "Adam": Adam,
+            "AdamW": AdamW
+        }
+
+    def get_optimizer(self, params: list):
+        name, val = params[0], params[1:]
+        return self.optimizer[name](*val)
+
+
+class LossMethod:
+    def __init__(self):
+        self.loss_func = {
+            "CrossEntropy": CrossEntropyLoss,
+            "LabelSmoothingCrossEntropy": LabelSmoothingCrossEntropy,
+            "Focal": FocalLoss
+        }
+
+    def get_loss(self, params: list):
+        name, val = params[0], params[1:]
+        return self.loss_func[name](*val)
+
+
+class SchedulerMethod:
+    def __init__(self):
+        self.scheduler = {
+            "None": None,
+            "Cosine": CosineLRScheduler,
+            "Step": StepLRScheduler,
+            "Poly": PolyLRScheduler
+        }
+
+    def get_scheduler(self, params: str):
+        return
+
+
+if __name__ == '__main__':
+    txt = "1,2"
+    txt2 = "1"
+    print(txt.split(","))
+    print(txt2.split(","))
